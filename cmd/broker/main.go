@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	pb "github.com/ivanovaleksey/broker/pkg/pb/broker_fast"
@@ -21,16 +22,19 @@ func init() {
 }
 
 func main() {
+	addr := flag.String("listen-addr", ":3000", "Listen address")
+	flag.Parse()
+
 	logger, err := zap.NewDevelopment()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	addr := ":3000"
-	lsn, err := net.Listen("tcp", addr)
+	lsn, err := net.Listen("tcp", *addr)
 	if err != nil {
-		logger.Fatal("can't listen addr", zap.String("addr", addr), zap.Error(err))
+		logger.Fatal("can't listen addr", zap.String("addr", *addr), zap.Error(err))
 	}
+	logger.Info("listen on", zap.String("addr", *addr))
 
 	srv := grpc.NewServer(
 		grpc_middleware.WithStreamServerChain(
