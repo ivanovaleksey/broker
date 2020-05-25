@@ -6,7 +6,7 @@ package broker
 import (
 	context "context"
 	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
+	proto "github.com/gogo/protobuf/proto"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -24,7 +24,7 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
+const _ = proto.GoGoProtoPackageIsVersion3 // please upgrade the proto package
 
 type ConsumeRequest_Action int32
 
@@ -58,10 +58,7 @@ type ConsumeRequest struct {
 	// Instead of word may be specified:
 	// * (star) can substitute for exactly one word.
 	// # (hash) can substitute for zero or more words.
-	Keys                 []string `protobuf:"bytes,2,rep,name=keys,proto3" json:"keys,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Keys []string `protobuf:"bytes,2,rep,name=keys,proto3" json:"keys,omitempty"`
 }
 
 func (m *ConsumeRequest) Reset()         { *m = ConsumeRequest{} }
@@ -114,11 +111,8 @@ func (m *ConsumeRequest) GetKeys() []string {
 type ConsumeResponse struct {
 	// Key is a list of words divided by dot. Word should contain only 0-9a-zA-Z characters.
 	// For example: aaa, aaa.bbb, ccc.123.ddd, etc.
-	Key                  string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Payload              []byte   `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Key     string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Payload []byte `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
 }
 
 func (m *ConsumeResponse) Reset()         { *m = ConsumeResponse{} }
@@ -171,11 +165,8 @@ func (m *ConsumeResponse) GetPayload() []byte {
 type ProduceRequest struct {
 	// Key is a list of words divided by dot. Word should contain only 0-9a-zA-Z characters.
 	// For example: aaa, aaa.bbb, ccc.123.ddd, etc.
-	Key                  string   `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Payload              []byte   `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	Key     string `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	Payload []byte `protobuf:"bytes,2,opt,name=payload,proto3" json:"payload,omitempty"`
 }
 
 func (m *ProduceRequest) Reset()         { *m = ProduceRequest{} }
@@ -226,9 +217,6 @@ func (m *ProduceRequest) GetPayload() []byte {
 }
 
 type ProduceResponse struct {
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *ProduceResponse) Reset()         { *m = ProduceResponse{} }
@@ -275,7 +263,7 @@ func init() {
 func init() { proto.RegisterFile("spec.proto", fileDescriptor_423806180556987f) }
 
 var fileDescriptor_423806180556987f = []byte{
-	// 295 bytes of a gzipped FileDescriptorProto
+	// 303 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0xe2, 0x2a, 0x2e, 0x48, 0x4d,
 	0xd6, 0x2b, 0x28, 0xca, 0x2f, 0xc9, 0x17, 0x62, 0xcf, 0x4d, 0x02, 0x33, 0x94, 0xda, 0x18, 0xb9,
 	0xf8, 0x9c, 0xf3, 0xf3, 0x8a, 0x4b, 0x73, 0x53, 0x83, 0x52, 0x0b, 0x4b, 0x53, 0x8b, 0x4b, 0x84,
@@ -291,10 +279,10 @@ var fileDescriptor_423806180556987f = []byte{
 	0x34, 0x91, 0x91, 0x8b, 0xd7, 0x37, 0xb5, 0xb8, 0x38, 0x31, 0x3d, 0xd5, 0xa9, 0x28, 0x3f, 0x3b,
 	0xb5, 0x48, 0xc8, 0x8e, 0x8b, 0x1d, 0xaa, 0x48, 0x48, 0x1c, 0x1e, 0x24, 0xa8, 0x96, 0x4a, 0x49,
 	0x60, 0x4a, 0x40, 0xcc, 0xd3, 0x60, 0x14, 0x72, 0xe0, 0x62, 0x87, 0xfa, 0x10, 0x49, 0x3f, 0x6a,
-	0x90, 0x22, 0xe9, 0x47, 0x0b, 0x0c, 0x0d, 0x46, 0x03, 0x46, 0x27, 0xa9, 0x13, 0x8f, 0xe4, 0x18,
-	0x2f, 0x3c, 0x92, 0x63, 0x7c, 0xf0, 0x48, 0x8e, 0x71, 0xc6, 0x63, 0x39, 0x86, 0x28, 0x0e, 0x3d,
-	0xeb, 0x24, 0xb0, 0xeb, 0x92, 0xd8, 0xc0, 0xda, 0x8c, 0x01, 0x01, 0x00, 0x00, 0xff, 0xff, 0x07,
-	0x05, 0xcd, 0x1e, 0xe6, 0x01, 0x00, 0x00,
+	0x90, 0x22, 0xe9, 0x47, 0x0b, 0x0c, 0x0d, 0x46, 0x03, 0x46, 0x27, 0xa5, 0x13, 0x8f, 0xe4, 0x18,
+	0x2f, 0x3c, 0x92, 0x63, 0x7c, 0xf0, 0x48, 0x8e, 0x71, 0xc2, 0x63, 0x39, 0x86, 0x0b, 0x8f, 0xe5,
+	0x18, 0x6e, 0x3c, 0x96, 0x63, 0x88, 0xe2, 0xd0, 0xb3, 0x4e, 0x02, 0xbb, 0x32, 0x89, 0x0d, 0xac,
+	0xdd, 0x18, 0x10, 0x00, 0x00, 0xff, 0xff, 0xf2, 0x06, 0x4b, 0x30, 0xee, 0x01, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -499,10 +487,6 @@ func (m *ConsumeRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
 	if len(m.Keys) > 0 {
 		for iNdEx := len(m.Keys) - 1; iNdEx >= 0; iNdEx-- {
 			i -= len(m.Keys[iNdEx])
@@ -540,10 +524,6 @@ func (m *ConsumeResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
 	if len(m.Payload) > 0 {
 		i -= len(m.Payload)
 		copy(dAtA[i:], m.Payload)
@@ -581,10 +561,6 @@ func (m *ProduceRequest) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
 	if len(m.Payload) > 0 {
 		i -= len(m.Payload)
 		copy(dAtA[i:], m.Payload)
@@ -622,10 +598,6 @@ func (m *ProduceResponse) MarshalToSizedBuffer(dAtA []byte) (int, error) {
 	_ = i
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		i -= len(m.XXX_unrecognized)
-		copy(dAtA[i:], m.XXX_unrecognized)
-	}
 	return len(dAtA) - i, nil
 }
 
@@ -655,9 +627,6 @@ func (m *ConsumeRequest) Size() (n int) {
 			n += 1 + l + sovSpec(uint64(l))
 		}
 	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
 	return n
 }
 
@@ -674,9 +643,6 @@ func (m *ConsumeResponse) Size() (n int) {
 	l = len(m.Payload)
 	if l > 0 {
 		n += 1 + l + sovSpec(uint64(l))
-	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
 	}
 	return n
 }
@@ -695,9 +661,6 @@ func (m *ProduceRequest) Size() (n int) {
 	if l > 0 {
 		n += 1 + l + sovSpec(uint64(l))
 	}
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
 	return n
 }
 
@@ -707,9 +670,6 @@ func (m *ProduceResponse) Size() (n int) {
 	}
 	var l int
 	_ = l
-	if m.XXX_unrecognized != nil {
-		n += len(m.XXX_unrecognized)
-	}
 	return n
 }
 
@@ -814,7 +774,6 @@ func (m *ConsumeRequest) Unmarshal(dAtA []byte) error {
 			if (iNdEx + skippy) > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
 			iNdEx += skippy
 		}
 	}
@@ -934,7 +893,6 @@ func (m *ConsumeResponse) Unmarshal(dAtA []byte) error {
 			if (iNdEx + skippy) > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
 			iNdEx += skippy
 		}
 	}
@@ -1054,7 +1012,6 @@ func (m *ProduceRequest) Unmarshal(dAtA []byte) error {
 			if (iNdEx + skippy) > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
 			iNdEx += skippy
 		}
 	}
@@ -1108,7 +1065,6 @@ func (m *ProduceResponse) Unmarshal(dAtA []byte) error {
 			if (iNdEx + skippy) > l {
 				return io.ErrUnexpectedEOF
 			}
-			m.XXX_unrecognized = append(m.XXX_unrecognized, dAtA[iNdEx:iNdEx+skippy]...)
 			iNdEx += skippy
 		}
 	}

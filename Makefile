@@ -25,7 +25,7 @@ generate-proto-fast:
 	mkdir -p $(PATH_PROTO_FAST) && cd $(PATH_PROTO_FAST) && \
 	protoc \
 		-I ../../.. \
-		--gofast_out=plugins=grpc:. \
+		--gogofaster_out=plugins=grpc:. \
 		../../../spec.proto
 
 .PHONY: generate-proto

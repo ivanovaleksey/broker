@@ -3,6 +3,7 @@ module github.com/ivanovaleksey/broker
 go 1.13
 
 require (
+	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.4.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
 	github.com/pkg/errors v0.8.1
