@@ -7,13 +7,21 @@ import (
 func (t *Tree) GetConsumers(parts []string) []types.ConsumerID {
 	nodeIDs := t.traverse(parts)
 
-	// todo: think about duplicates!!!
-
+	// todo: there may be duplicates, because placeholders may be treated differently
+	// e.g., in hash case both 2 and 2-># can stop nodes for the same pattern
+	uniq := make(map[types.ConsumerID]struct{}, len(nodeIDs))
 	out := make([]types.ConsumerID, 0, len(nodeIDs))
 	for _, nodeID := range nodeIDs {
 		// todo: consider using bulk method to avoid multiple waits on lock
 		ids := t.nodeConsumers.GetConsumers(nodeID)
-		out = append(out, ids...)
+		for _, consumerID := range ids {
+			_, ok := uniq[consumerID]
+			if ok {
+				continue
+			}
+			uniq[consumerID] = struct{}{}
+			out = append(out, ids...)
+		}
 	}
 	return out
 }
@@ -57,12 +65,33 @@ func (t *Tree) traverseNode(node *Node, parts []string, stopNodes map[types.Node
 	// 	children = append(children, node)
 	// }
 
-	for _, child := range node.ChildrenForTraverse(part) {
+	children := node.ChildrenForTraverse(part, true)
+	for {
+		if len(children) == 0 {
+			break
+		}
+		child := children[0]
+		children = children[1:]
 		if child == nil {
 			continue
 		}
+		if child.IsHash() {
+			hashChildren := child.ChildrenForTraverse(part, false)
+			children = append(children, hashChildren...)
+		}
 		t.traverseNode(child, parts[1:], stopNodes)
 	}
+
+	// for _, child := range children {
+	// 	if child == nil {
+	// 		continue
+	// 	}
+	// 	if child.IsHash() {
+	// 		hashChildren := child.ChildrenForTraverse(part)
+	// 		children = append(children, hashChildren...)
+	// 	}
+	// 	t.traverseNode(child, parts[1:], stopNodes)
+	// }
 
 	if node.IsHash() && node.IsStop() {
 		stopNodes[node.ID] = struct{}{}

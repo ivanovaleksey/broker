@@ -120,7 +120,7 @@ func TestTree_GetConsumers(t *testing.T) {
 		)
 
 		tree := NewTree()
-		tree.AddSubscription(consumerA, []string{"#", "1", "#", "2", "#"})
+		tree.AddSubscription(consumerA, []string{"#", "#", "1", "#", "2", "#"})
 		// tree.AddSubscription(consumerB, []string{"#"})
 		tree.AddSubscription(consumerC, []string{"1", "#", "2"})
 

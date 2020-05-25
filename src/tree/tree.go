@@ -29,8 +29,9 @@ func (t *Tree) AddSubscription(consumerID types.ConsumerID, subscription []strin
 	}
 
 	var (
-		lastPart              bool
-		currentNode, prevNode *Node
+		lastPart    bool
+		currentNode *Node
+		// prevNode    *Node
 	)
 	currentNode = t.root
 
@@ -42,6 +43,7 @@ func (t *Tree) AddSubscription(consumerID types.ConsumerID, subscription []strin
 		if childNode == nil {
 			newNode := NewNode()
 			newNode.SetType(part)
+			newNode.Part = part
 
 			if lastPart {
 				newNode.Stop = true
@@ -56,9 +58,9 @@ func (t *Tree) AddSubscription(consumerID types.ConsumerID, subscription []strin
 				}
 			}
 
-			if currentNode.IsHash() && prevNode != nil {
-				prevNode.SetChild(newNode, part)
-			}
+			// if currentNode.IsHash() && prevNode != nil {
+			// 	prevNode.SetChild(newNode, part)
+			// }
 			currentNode.SetChild(newNode, part)
 			childNode = newNode
 		} else {
@@ -69,7 +71,7 @@ func (t *Tree) AddSubscription(consumerID types.ConsumerID, subscription []strin
 			}
 		}
 
-		prevNode = currentNode
+		// prevNode = currentNode
 		currentNode = childNode
 	}
 }

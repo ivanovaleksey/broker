@@ -23,6 +23,9 @@ type Node struct {
 	ID   int64
 	Type NodeType
 
+	// todo: remove, just for debug
+	Part string
+
 	stopMu sync.RWMutex
 	Stop   bool
 
@@ -40,17 +43,19 @@ func NewNode() *Node {
 	return n
 }
 
-func (n *Node) ChildrenForTraverse(word string) []*Node {
+func (n *Node) ChildrenForTraverse(word string, withSelfHash bool) []*Node {
 	n.childMu.RLock()
-	out := []*Node{
-		n.Next[word],
-		n.Next[NodeHash],
-		n.Next[NodeStar],
-		nil,
-	}
+	wordChild := n.Next[word]
+	hashChild := n.Next[NodeHash]
+	starChild := n.Next[NodeStar]
 	n.childMu.RUnlock()
-	if n.IsHash() {
-		out[3] = n
+	out := make([]*Node, 0, 4)
+	out = append(out, wordChild, hashChild, starChild)
+	// if n.IsHash() {
+	// 	out[3] = n
+	// }
+	if n.IsHash() && withSelfHash {
+		out = append(out, n)
 	}
 	return out
 }
