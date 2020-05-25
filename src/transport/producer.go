@@ -4,6 +4,7 @@ import (
 	"github.com/grpc-ecosystem/go-grpc-middleware/logging/zap/ctxzap"
 	pb "github.com/ivanovaleksey/broker/pkg/pb/broker_fast"
 	"go.uber.org/zap"
+	"google.golang.org/grpc/status"
 	"io"
 )
 
@@ -27,7 +28,7 @@ func (t *Transport) Produce(stream pb.MessageBroker_ProduceServer) error {
 			logger.Debug("--EOF--")
 			return stream.SendAndClose(&pb.ProduceResponse{})
 		case err != nil:
-			logger.Error("produce receive error", zap.Error(err))
+			logger.Error("producer recv error", zap.String("code", status.Code(err).String()))
 			return err
 		}
 

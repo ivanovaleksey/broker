@@ -23,9 +23,15 @@ func init() {
 
 func main() {
 	addr := flag.String("listen-addr", ":3000", "Listen address")
+	debug := flag.Bool("debug", false, "Run with debug logs")
 	flag.Parse()
 
-	logger, err := zap.NewDevelopment()
+	config := zap.NewProductionConfig()
+	config.Level.SetLevel(zap.ErrorLevel)
+	if *debug {
+		config = zap.NewDevelopmentConfig()
+	}
+	logger, err := config.Build()
 	if err != nil {
 		log.Fatal(err)
 	}

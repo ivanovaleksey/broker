@@ -5,6 +5,7 @@ import (
 	pb "github.com/ivanovaleksey/broker/pkg/pb/broker_fast"
 	"github.com/ivanovaleksey/broker/pkg/types"
 	"go.uber.org/zap"
+	"google.golang.org/grpc/status"
 	"io"
 	"math/rand"
 )
@@ -33,7 +34,7 @@ func (t *Transport) Consume(stream pb.MessageBroker_ConsumeServer) error {
 			return nil
 		case err != nil:
 			t.RemoveConsumer(consumerID)
-			logger.Error("recv error", zap.Error(err))
+			logger.Error("consumer recv error", zap.String("code", status.Code(err).String()))
 			return err
 		}
 
