@@ -20,11 +20,12 @@ func (b *Broker) handleSubscribe(id types.ConsumerID, pattern types.Topic) error
 		return err
 	}
 
-	parts = prepareParts(parts)
+	// parts = prepareParts(parts)
 	b.tree.AddSubscription(id, parts)
 	return nil
 }
 
+// todo: really need to combine sequent hashes?
 // it mutates input parts
 func prepareParts(parts []string) []string {
 	out := parts[:0]

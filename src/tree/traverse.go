@@ -11,16 +11,17 @@ func (t *Tree) GetConsumers(parts []string) []types.ConsumerID {
 	// e.g., in hash case both 2 and 2-># can stop nodes for the same pattern
 	uniq := make(map[types.ConsumerID]struct{}, len(nodeIDs))
 	out := make([]types.ConsumerID, 0, len(nodeIDs))
+
 	for _, nodeID := range nodeIDs {
 		// todo: consider using bulk method to avoid multiple waits on lock
 		ids := t.nodeConsumers.GetConsumers(nodeID)
-		for _, consumerID := range ids {
+		for consumerID := range ids {
 			_, ok := uniq[consumerID]
 			if ok {
 				continue
 			}
 			uniq[consumerID] = struct{}{}
-			out = append(out, ids...)
+			out = append(out, consumerID)
 		}
 	}
 	return out

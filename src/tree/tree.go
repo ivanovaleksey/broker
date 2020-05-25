@@ -23,7 +23,7 @@ func NewTree() *Tree {
 }
 
 // AddSubscription receives already prepared parts
-func (t *Tree) AddSubscription(consumerID types.ConsumerID, subscription []string) {
+func (t *Tree) AddSubscription(consumerID types.ConsumerID, parts []string) {
 	if t.root == nil {
 		return
 	}
@@ -35,9 +35,22 @@ func (t *Tree) AddSubscription(consumerID types.ConsumerID, subscription []strin
 	)
 	currentNode = t.root
 
-	for i := 0; i < len(subscription); i++ {
-		part := subscription[i]
-		lastPart = i == (len(subscription) - 1)
+	fn := func(childNode, parentNode *Node) {
+		t.nodeConsumers.AddConsumer(childNode.ID, consumerID)
+		// todo: is it ok or should be done in smarter way?
+		if childNode.IsHash() {
+			// todo: check this is not root node, maybe better check
+			if parentNode.ID > 0 {
+				// todo: it was outside if, move in case of strange problems
+				parentNode.SetStop(true)
+				t.nodeConsumers.AddConsumer(parentNode.ID, consumerID)
+			}
+		}
+	}
+
+	for i := 0; i < len(parts); i++ {
+		part := parts[i]
+		lastPart = i == (len(parts) - 1)
 
 		childNode := currentNode.Child(part)
 		if childNode == nil {
@@ -47,17 +60,20 @@ func (t *Tree) AddSubscription(consumerID types.ConsumerID, subscription []strin
 
 			if lastPart {
 				newNode.Stop = true
-				t.nodeConsumers.AddConsumer(newNode.ID, consumerID)
-				// todo: is it ok or should be done in smarter way?
-				if newNode.IsHash() {
-					currentNode.SetStop(true)
-					// todo: check this is not root node, maybe better check
-					if currentNode.ID > 0 {
-						t.nodeConsumers.AddConsumer(currentNode.ID, consumerID)
-					}
-				}
+				fn(newNode, currentNode)
+				// t.nodeConsumers.AddConsumer(newNode.ID, consumerID)
+				// // todo: is it ok or should be done in smarter way?
+				// if newNode.IsHash() {
+				// 	// todo: check this is not root node, maybe better check
+				// 	if currentNode.ID > 0 {
+				// 		// todo: it was outside if, move in case of strange problems
+				// 		currentNode.SetStop(true)
+				// 		t.nodeConsumers.AddConsumer(currentNode.ID, consumerID)
+				// 	}
+				// }
 			}
 
+			// note: it was initial idea, some tests weren't pass, not used for now
 			// if currentNode.IsHash() && prevNode != nil {
 			// 	prevNode.SetChild(newNode, part)
 			// }
@@ -65,9 +81,18 @@ func (t *Tree) AddSubscription(consumerID types.ConsumerID, subscription []strin
 			childNode = newNode
 		} else {
 			if lastPart {
-				// set stop in else-branch to avoid re-setting stop=true for new node
+				// set stop in else-branch (not outside of if-else) to avoid re-setting stop=true for new node
 				childNode.SetStop(true)
-				t.nodeConsumers.AddConsumer(childNode.ID, consumerID)
+				fn(childNode, currentNode)
+				// t.nodeConsumers.AddConsumer(childNode.ID, consumerID)
+
+				// this code is deduplicated in fn
+				// if childNode.IsHash() {
+				// 	if currentNode.ID > 0 {
+				// 		currentNode.SetStop(true)
+				// 		t.nodeConsumers.AddConsumer(currentNode.ID, consumerID)
+				// 	}
+				// }
 			}
 		}
 
@@ -76,7 +101,47 @@ func (t *Tree) AddSubscription(consumerID types.ConsumerID, subscription []strin
 	}
 }
 
-// todo: if no consumers left node should not be stop anymore
-func (t *Tree) RemoveSubscription(consumerID types.ConsumerID, subscription []string) {
+func (t *Tree) RemoveSubscription(consumerID types.ConsumerID, parts []string) {
+	if t.root == nil {
+		return
+	}
 
+	var (
+		lastPart    bool
+		currentNode *Node
+		prevNode    *Node
+	)
+	currentNode = t.root
+
+	removeFromNode := func(node *Node) {
+		left := t.nodeConsumers.RemoveConsumer(node.ID, consumerID)
+		if left == 0 {
+			node.SetStop(false)
+		}
+	}
+
+	for i, part := range parts {
+		childNode := currentNode.Child(part)
+		if childNode == nil {
+			// todo: break or continue?
+			break
+		}
+		prevNode = currentNode
+		currentNode = childNode
+
+		lastPart = i == (len(parts) - 1)
+		if lastPart {
+			if !currentNode.IsStop() {
+				continue
+			}
+			// todo: тут плохо то, что флаг stop-node еще не значит, что имеено этот консьюмер на нее подписан
+			removeFromNode(currentNode)
+			if currentNode.IsHash() {
+				// todo: can be nil and panic?
+				if prevNode.ID > 0 {
+					removeFromNode(prevNode)
+				}
+			}
+		}
+	}
 }

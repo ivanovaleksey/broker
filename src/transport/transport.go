@@ -27,6 +27,9 @@ func NewTransport(b Broker) *Transport {
 		broker: b,
 		// consumers: make(map[types.ConsumerID]Consumer),
 	}
+	for i := 0; i < bucketsCount; i++ {
+		t.consumers[i] = make(map[types.ConsumerID]Consumer, 1)
+	}
 	return t
 }
 
