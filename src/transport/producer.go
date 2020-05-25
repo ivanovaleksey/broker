@@ -31,31 +31,30 @@ func (t *Transport) Produce(stream pb.MessageBroker_ProduceServer) error {
 			return err
 		}
 
-		// todo: handle produce request
 		logger.Debug("produced message", zap.String("key", req.Key), zap.ByteString("payload", req.Payload))
-
 		consumerIDs, err := t.broker.GetConsumers(req.Key)
 		if err != nil {
 			logger.Error("can't get consumers", zap.String("topic", req.Key))
 			continue
 		}
-
 		logger.Debug("got consumers", zap.String("topic", req.Key), zap.Int64s("ids", consumerIDs))
 
-		// topic := req.Key
-		// consumers := t.broker.Consumers(topic)
-		// if len(consumers) == 0 {
-		// 	logger.Debug("no consumers", zap.String("topic", topic))
-		// 	continue
-		// }
-		//
-		// if err != nil {
-		// 	logger.Error("send message", zap.Error(err))
-		// 	return err
-		// }
+		// todo: consider using queue with N workers for sending
+		for _, consumerID := range consumerIDs {
+			consumer, ok := t.GetConsumer(consumerID)
+			if !ok {
+				logger.Debug("no consumer", zap.Int64("id", consumerID))
+				continue
+			}
+
+			logger.Debug("sending to consumer", zap.Int64("id", consumerID))
+			go func(target Consumer) {
+				// todo: how to handle err?
+				consumer.Send(&pb.ConsumeResponse{
+					Key:     req.Key,
+					Payload: req.Payload,
+				})
+			}(consumer)
+		}
 	}
 }
-
-// func Produce() error {
-//
-// }

@@ -35,7 +35,7 @@ func run(l *zap.Logger, num int) error {
 
 	client := pb.NewMessageBrokerClient(conn)
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 	defer cancel()
 
 	producer, err := client.Produce(context.Background())
@@ -47,8 +47,8 @@ func run(l *zap.Logger, num int) error {
 	defer ticker.Stop()
 
 	var (
-		key  = "topic_" + strconv.Itoa(num)
-		data = []byte("data_" + strconv.Itoa(num) + "_" + time.Now().Format(time.RFC3339))
+		key  = "topic" + strconv.Itoa(num)
+		data []byte
 	)
 
 loop:
@@ -59,6 +59,7 @@ loop:
 			break loop
 		case <-ticker.C:
 			l.Debug("tick")
+			data = []byte("data_" + strconv.Itoa(num) + "_" + time.Now().Format(time.RFC3339))
 			req := &pb.ProduceRequest{
 				Key:     key,
 				Payload: data,

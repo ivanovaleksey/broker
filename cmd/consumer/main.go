@@ -56,11 +56,11 @@ func run(l *zap.Logger, num int) error {
 			return consumer.Send(req)
 		}
 
-		subscribe("topic_1")
+		subscribe("topic1")
 		time.Sleep(time.Second * 5)
-		subscribe("topic_2")
+		subscribe("topic2")
 
-		consumer.CloseSend()
+		// consumer.CloseSend()
 	}()
 
 	l.Debug("ready to recv")

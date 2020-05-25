@@ -28,8 +28,11 @@ func (t *Transport) Consume(stream pb.MessageBroker_ConsumeServer) error {
 		switch {
 		case err == io.EOF:
 			logger.Debug("--EOF--")
+			t.RemoveConsumer(consumerID)
+			// todo: need to unsubscribe? need all subscribed keys?
 			return nil
 		case err != nil:
+			t.RemoveConsumer(consumerID)
 			logger.Error("recv error", zap.Error(err))
 			return err
 		}
@@ -51,6 +54,13 @@ func (t *Transport) AddConsumer(id types.ConsumerID, consumer Consumer) {
 	index := id % bucketsCount
 	t.consumersLocks[index].Lock()
 	t.consumers[index][id] = consumer
+	t.consumersLocks[index].Unlock()
+}
+
+func (t *Transport) RemoveConsumer(id types.ConsumerID) {
+	index := id % bucketsCount
+	t.consumersLocks[index].Lock()
+	delete(t.consumers[index], id)
 	t.consumersLocks[index].Unlock()
 }
 
