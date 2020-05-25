@@ -5,7 +5,7 @@ import (
 	"sync"
 )
 
-const bucketsCount = 16
+const bucketsCount = 256
 
 type NodeConsumers = map[types.NodeID]Consumers
 type Consumers = map[types.ConsumerID]int

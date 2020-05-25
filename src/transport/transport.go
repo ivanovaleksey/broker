@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-const bucketsCount = 16
+const bucketsCount = 256
 
 // type Consumer = pb.MessageBroker_ConsumeServer
 type Consumer interface {
