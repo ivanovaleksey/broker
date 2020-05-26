@@ -12,6 +12,8 @@ import (
 	"log"
 	"math/rand"
 	"net"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"time"
@@ -22,8 +24,9 @@ func init() {
 }
 
 func main() {
-	addr := flag.String("listen-addr", ":3000", "Listen address")
+	addr := flag.String("listen-addr", ":8000", "Listen address")
 	debug := flag.Bool("debug", false, "Run with debug logs")
+	pprof := flag.Bool("pprof", false, "Run with pprof")
 	flag.Parse()
 
 	config := zap.NewProductionConfig()
@@ -34,6 +37,12 @@ func main() {
 	logger, err := config.Build()
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if *pprof {
+		go func() {
+			http.ListenAndServe(":8080", nil)
+		}()
 	}
 
 	lsn, err := net.Listen("tcp", *addr)
