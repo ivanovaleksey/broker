@@ -15,12 +15,12 @@ func (t *Transport) Consume(stream pb.MessageBroker_ConsumeServer) error {
 	logger := ctxzap.Extract(ctx)
 
 	consumerID := rand.Int63()
-	logger.Debug("start consume", zap.Int64("consumer_id", consumerID))
+	// logger.Debug("start consume", zap.Int64("consumer_id", consumerID))
 
 	for {
 		select {
 		case <-ctx.Done():
-			logger.Debug("consume ctx done")
+			// logger.Debug("consume ctx done")
 			return ctx.Err()
 		default:
 		}
@@ -28,7 +28,7 @@ func (t *Transport) Consume(stream pb.MessageBroker_ConsumeServer) error {
 		req, err := stream.Recv()
 		switch {
 		case err == io.EOF:
-			logger.Debug("--EOF--")
+			// logger.Debug("--EOF--")
 			t.RemoveConsumer(consumerID)
 			// todo: need to unsubscribe? need all subscribed keys?
 			return nil
@@ -38,7 +38,7 @@ func (t *Transport) Consume(stream pb.MessageBroker_ConsumeServer) error {
 			return err
 		}
 
-		logger.Debug("consumed message", zap.String("action", req.Action.String()), zap.Strings("keys", req.Keys), zap.Int64("consumer", consumerID))
+		// logger.Debug("consumed message", zap.String("action", req.Action.String()), zap.Strings("keys", req.Keys), zap.Int64("consumer", consumerID))
 
 		switch req.Action {
 		case pb.ConsumeRequest_SUBSCRIBE:

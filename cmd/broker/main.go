@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
@@ -24,6 +25,9 @@ func init() {
 }
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	addr := flag.String("listen-addr", ":8000", "Listen address")
 	debug := flag.Bool("debug", false, "Run with debug logs")
 	pprof := flag.Bool("pprof", false, "Run with pprof")
@@ -51,13 +55,17 @@ func main() {
 	}
 	logger.Info("listen on", zap.String("addr", *addr))
 
-	srv := grpc.NewServer(
-		grpc_middleware.WithStreamServerChain(
+	var opts []grpc.ServerOption
+	if *debug {
+		opts = append(opts, grpc_middleware.WithStreamServerChain(
 			grpc_zap.StreamServerInterceptor(logger),
-		),
-	)
+		))
+	}
+	srv := grpc.NewServer(opts...)
 	brk := broker.NewBroker(logger)
-	pb.RegisterMessageBrokerServer(srv, transport.NewTransport(brk))
+	trt := transport.NewTransport(ctx, logger, brk)
+	pb.RegisterMessageBrokerServer(srv, trt)
+	trt.Start()
 
 	sign := make(chan os.Signal)
 	signal.Notify(sign, os.Interrupt)
@@ -73,17 +81,22 @@ func main() {
 	logger.Debug("waiting for signal")
 	s := <-sign
 	logger.Debug("received signal", zap.String("signal", s.String()))
+	cancel()
 
 	done := make(chan struct{}, 1)
 	go func() {
 		srv.GracefulStop()
+		logger.Debug("closing transport")
+		if err := trt.Close(); err != nil {
+			logger.Error("can't close transport", zap.Error(err))
+		}
 		done <- struct{}{}
 	}()
 
 	const gracefulTimeout = time.Second * 5
 	select {
 	case <-time.After(gracefulTimeout):
-		logger.Debug("timed out")
+		logger.Error("timed out")
 	case <-done:
 		logger.Debug("stopped gracefully")
 	}

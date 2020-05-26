@@ -27,7 +27,7 @@ func main() {
 }
 
 func run(l *zap.Logger, num int) error {
-	addr := "127.0.0.1:3000"
+	addr := "127.0.0.1:8000"
 	conn, err := grpc.Dial(addr, grpc.WithInsecure())
 	if err != nil {
 		return errors.Wrap(err, "can't dial")

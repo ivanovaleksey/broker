@@ -1,8 +1,10 @@
 package transport
 
 import (
+	"context"
 	pb "github.com/ivanovaleksey/broker/pkg/pb/broker_fast"
 	"github.com/ivanovaleksey/broker/pkg/types"
+	"go.uber.org/zap"
 	"sync"
 )
 
@@ -15,6 +17,7 @@ type Consumer interface {
 
 type Transport struct {
 	broker Broker
+	queue  *Queue
 
 	// mu        sync.RWMutex
 	// consumers map[types.ConsumerID]Consumer
@@ -22,9 +25,10 @@ type Transport struct {
 	consumers      [bucketsCount]map[types.ConsumerID]Consumer
 }
 
-func NewTransport(b Broker) *Transport {
+func NewTransport(ctx context.Context, logger *zap.Logger, b Broker) *Transport {
 	t := &Transport{
 		broker: b,
+		queue:  NewQueue(ctx, logger),
 		// consumers: make(map[types.ConsumerID]Consumer),
 	}
 	for i := 0; i < bucketsCount; i++ {
@@ -33,9 +37,17 @@ func NewTransport(b Broker) *Transport {
 	return t
 }
 
+func (t *Transport) Start() {
+	t.queue.RunBackground()
+}
+
 type Broker interface {
 	Subscribe(id types.ConsumerID, topics []types.Topic)
 	// todo: consider returning list of remaining subscriptions
 	Unsubscribe(id types.ConsumerID, topics []types.Topic)
 	GetConsumers(topic string) ([]types.ConsumerID, error)
+}
+
+func (t *Transport) Close() error {
+	return t.queue.Close()
 }

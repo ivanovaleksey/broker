@@ -5,8 +5,8 @@ PATH_PROTO="pkg/pb/broker"
 test:
 	go test -v -count=1 ./...
 
-.PHONY: build
-build:
+.PHONY: build-broker
+build-broker:
 	go build -o ./bin/mbs ./cmd/broker
 
 .PHONY: build-producer
@@ -18,7 +18,7 @@ build-consumer:
 	go build -o ./bin/mbc ./cmd/consumer
 
 .PHONY: build-all
-build-all: build build-consumer build-producer
+build-all: build-broker build-consumer build-producer
 
 .PHONY: generate-proto-fast
 generate-proto-fast:
