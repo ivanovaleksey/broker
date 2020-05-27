@@ -242,6 +242,7 @@ func (t *Tree) RemoveSubscription(consumerID types.ConsumerID, parts []uint64) {
 	removeFromNode := func(node *Node) {
 		left := t.nodeConsumers.RemoveConsumer(node.ID, consumerID)
 		if left == 0 {
+			// todo: remove node?
 			node.SetStop(false)
 		}
 	}

@@ -1,6 +1,7 @@
 package tree
 
 import (
+	"container/list"
 	"github.com/ivanovaleksey/broker/pkg/types"
 )
 
@@ -45,7 +46,7 @@ func (t *Tree) traverse(parts []uint64) []types.NodeID {
 		return nil
 	}
 	visited := make(map[types.NodeID]struct{})
-	t.traverseNode(t.root, parts, visited)
+	t.traverseQueue(t.root, parts, visited)
 	if len(visited) == 0 {
 		return nil
 	}
@@ -56,57 +57,94 @@ func (t *Tree) traverse(parts []uint64) []types.NodeID {
 	return out
 }
 
-// todo: think about non-recursive variant
-// traverseNode returns true if last part is happen to be on a stop-node
-func (t *Tree) traverseNode(node *Node, parts []uint64, stopNodes map[types.NodeID]struct{}) {
+// todo: for now it doesn't work with subsequent hashes
+func (t *Tree) traverseQueue(node *Node, parts []uint64, stopNodes map[types.NodeID]struct{}) {
+	type NodeWithParts struct {
+		node  *Node
+		parts []uint64
+	}
+
 	if node == nil {
 		panic("node should not be nil")
 	}
 
-	if len(parts) == 0 {
-		if !node.IsStop() {
-			return
+	queue := list.New()
+	queue.PushBack(&NodeWithParts{
+		node:  node,
+		parts: parts,
+	})
+
+	fn := func(hashNode *Node, part uint64, parts []uint64) {
+		children := hashNode.ChildrenForTraverse(part, false)
+		if n := children.Word; n != nil {
+			queue.PushBack(&NodeWithParts{
+				node:  n,
+				parts: parts[1:],
+			})
 		}
-		stopNodes[node.ID] = struct{}{}
-		return
+		if n := children.Star; n != nil {
+			queue.PushBack(&NodeWithParts{
+				node:  n,
+				parts: parts[1:],
+			})
+		}
+		if n := children.Hash; n != nil {
+			queue.PushBack(&NodeWithParts{
+				node:  n,
+				parts: parts[1:],
+			})
+		}
 	}
 
-	part := parts[0]
-	// wordChild, hashChild, starChild := node.ChildrenForTraverse(part)
-	// children := []*Node{wordChild, hashChild, starChild}
-	// if node.IsHash() {
-	// 	children = append(children, node)
-	// }
+	for queue.Len() > 0 {
+		front := queue.Front()
+		nodePart := front.Value.(*NodeWithParts)
+		node := nodePart.node
+		parts := nodePart.parts
 
-	children := node.ChildrenForTraverse(part, true)
-	for {
-		if len(children) == 0 {
-			break
-		}
-		child := children[0]
-		children = children[1:]
-		if child == nil {
+		if len(parts) == 0 {
+			if node.IsStop() {
+				stopNodes[node.ID] = struct{}{}
+			}
+			queue.Remove(front)
 			continue
 		}
-		if child.IsHash() {
-			hashChildren := child.ChildrenForTraverse(part, false)
-			children = append(children, hashChildren...)
+
+		part := parts[0]
+
+		children := node.ChildrenForTraverse(part, true)
+		if n := children.Word; n != nil {
+			queue.PushBack(&NodeWithParts{
+				node:  n,
+				parts: parts[1:],
+			})
 		}
-		t.traverseNode(child, parts[1:], stopNodes)
+		if n := children.Star; n != nil {
+			queue.PushBack(&NodeWithParts{
+				node:  n,
+				parts: parts[1:],
+			})
+		}
+		if n := children.Hash; n != nil {
+			queue.PushBack(&NodeWithParts{
+				node:  n,
+				parts: parts[1:],
+			})
+			fn(n, part, parts)
+		}
+		if n := children.SelfHash; n != nil {
+			queue.PushBack(&NodeWithParts{
+				node:  n,
+				parts: parts[1:],
+			})
+			fn(n, part, parts)
+		}
+
+		queue.Remove(front)
 	}
 
-	// for _, child := range children {
-	// 	if child == nil {
-	// 		continue
-	// 	}
-	// 	if child.IsHash() {
-	// 		hashChildren := child.ChildrenForTraverse(part)
-	// 		children = append(children, hashChildren...)
-	// 	}
-	// 	t.traverseNode(child, parts[1:], stopNodes)
+	// todo: where to put it?
+	// if node.IsHash() && node.IsStop() {
+	// 	stopNodes[node.ID] = struct{}{}
 	// }
-
-	if node.IsHash() && node.IsStop() {
-		stopNodes[node.ID] = struct{}{}
-	}
 }

@@ -5,7 +5,11 @@ import (
 	"sync"
 )
 
-const bucketsCount = 256
+const (
+	bucketsCount = 4
+	nodesInBucket = 1
+	consumersInNode = 1
+)
 
 type NodeConsumers = map[types.NodeID]Consumers
 type Consumers = map[types.ConsumerID]int
@@ -19,7 +23,7 @@ type ConsumersLog struct {
 func NewConsumersLog() *ConsumersLog {
 	log := &ConsumersLog{}
 	for i := 0; i < bucketsCount; i++ {
-		log.nodeConsumers[i] = make(NodeConsumers, 1)
+		log.nodeConsumers[i] = make(NodeConsumers, nodesInBucket)
 	}
 	return log
 }
@@ -29,7 +33,7 @@ func (l *ConsumersLog) AddConsumer(nodeID types.NodeID, consumerID types.Consume
 	l.locks[bucketIndex].Lock()
 	hash, ok := l.nodeConsumers[bucketIndex][nodeID]
 	if !ok {
-		hash = make(Consumers, 1)
+		hash = make(Consumers, consumersInNode)
 		l.nodeConsumers[bucketIndex][nodeID] = hash
 	}
 	hash[consumerID]++
