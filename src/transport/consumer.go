@@ -54,6 +54,7 @@ func (t *Transport) Consume(stream pb.MessageBroker_ConsumeServer) error {
 func (t *Transport) AddConsumer(id types.ConsumerID, consumer Consumer) {
 	index := id % bucketsCount
 	t.consumersLocks[index].Lock()
+	// todo: check ok and set if false?
 	t.consumers[index][id] = consumer
 	t.consumersLocks[index].Unlock()
 }

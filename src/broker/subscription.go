@@ -15,6 +15,15 @@ func (b *Broker) Subscribe(id types.ConsumerID, topics []types.Topic) {
 }
 
 func (b *Broker) handleSubscribe(id types.ConsumerID, pattern types.Topic) error {
+	isStatic, err := b.topicParser.IsStatic(pattern)
+	if err != nil {
+		return err
+	}
+	if isStatic {
+		b.tree.AddSubscriptionStatic(id, pattern)
+		return nil
+	}
+
 	parts, err := b.topicParser.ParsePattern(pattern)
 	if err != nil {
 		return err

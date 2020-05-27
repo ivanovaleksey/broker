@@ -2,6 +2,7 @@ package tree
 
 import (
 	"github.com/ivanovaleksey/broker/pkg/types"
+	"strings"
 )
 
 func (t *Tree) GetConsumers(parts []string) []types.ConsumerID {
@@ -9,8 +10,15 @@ func (t *Tree) GetConsumers(parts []string) []types.ConsumerID {
 
 	// todo: there may be duplicates, because placeholders may be treated differently
 	// e.g., in hash case both 2 and 2-># can stop nodes for the same pattern
-	uniq := make(map[types.ConsumerID]struct{}, len(nodeIDs))
-	out := make([]types.ConsumerID, 0, len(nodeIDs))
+	// uniq := make(map[types.ConsumerID]struct{}, len(nodeIDs))
+
+	topic := strings.Join(parts, ".")
+	uniq := make(map[types.ConsumerID]struct{})
+	t.staticConsumersMu.RLock()
+	for consumerID := range t.staticConsumers[topic] {
+		uniq[consumerID] = struct{}{}
+	}
+	t.staticConsumersMu.RUnlock()
 
 	for _, nodeID := range nodeIDs {
 		// todo: consider using bulk method to avoid multiple waits on lock
@@ -21,8 +29,12 @@ func (t *Tree) GetConsumers(parts []string) []types.ConsumerID {
 				continue
 			}
 			uniq[consumerID] = struct{}{}
-			out = append(out, consumerID)
 		}
+	}
+
+	out := make([]types.ConsumerID, 0, len(uniq))
+	for id := range uniq {
+		out = append(out, id)
 	}
 	return out
 }

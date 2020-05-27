@@ -15,7 +15,7 @@ var (
 )
 
 var (
-	topicRegexp = regexp.MustCompile(`^(?:[.A-Za-z0-9])+$`)
+	topicRegexp   = regexp.MustCompile(`^(?:[.A-Za-z0-9])+$`)
 	patternRegexp = regexp.MustCompile(`^(?:[.*#A-Za-z0-9])+$`)
 )
 
@@ -24,6 +24,13 @@ type Parser struct {
 
 func NewParser() Parser {
 	return Parser{}
+}
+
+func (p Parser) IsStatic(topic types.Topic) (bool, error) {
+	if err := p.validate(topic); err != nil {
+		return false, err
+	}
+	return topicRegexp.MatchString(topic), nil
 }
 
 func (p Parser) ParseTopic(topic types.Topic) ([]string, error) {
@@ -35,12 +42,8 @@ func (p Parser) ParsePattern(pattern types.Topic) ([]string, error) {
 }
 
 func (p Parser) parse(str string, exp *regexp.Regexp) ([]string, error) {
-	topicLen := len(str)
-	if topicLen == 0 {
-		return nil, ErrTopicEmpty
-	}
-	if topicLen > 64 {
-		return nil, ErrTopicTooLong
+	if err := p.validate(str); err != nil {
+		return nil, err
 	}
 	if !exp.MatchString(str) {
 		return nil, ErrTopicInvalidChar
@@ -52,4 +55,15 @@ func (p Parser) parse(str string, exp *regexp.Regexp) ([]string, error) {
 		}
 	}
 	return parts, nil
+}
+
+func (p Parser) validate(topic types.Topic) error {
+	topicLen := len(topic)
+	if topicLen == 0 {
+		return ErrTopicEmpty
+	}
+	if topicLen > 64 {
+		return ErrTopicTooLong
+	}
+	return nil
 }

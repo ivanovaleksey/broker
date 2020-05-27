@@ -2,24 +2,51 @@ package tree
 
 import (
 	"github.com/ivanovaleksey/broker/pkg/types"
+	"sync"
 )
 
 type Tree struct {
 	root          *Node
 	nodeConsumers *ConsumersLog
+
+	staticConsumersMu sync.RWMutex
+	staticConsumers   map[types.Topic]map[types.ConsumerID]struct{}
 }
 
 func NewTree() *Tree {
 	root := NewNode()
 	root.ID = -1
 
+	star := NewNode()
+	star.Type = NodeTypeStar
+	star.Part = NodeStar
+	root.SetChild(star, NodeStar)
+
+	hash := NewNode()
+	hash.Type = NodeTypeHash
+	hash.Part = NodeHash
+	root.SetChild(hash, NodeHash)
+
 	log := NewConsumersLog()
 
 	t := &Tree{
-		root:          root,
-		nodeConsumers: log,
+		root:            root,
+		nodeConsumers:   log,
+		staticConsumers: make(map[types.Topic]map[types.ConsumerID]struct{}),
 	}
 	return t
+}
+
+func (t *Tree) AddSubscriptionStatic(consumerID types.ConsumerID, topic types.Topic) {
+	t.staticConsumersMu.Lock()
+	defer t.staticConsumersMu.Unlock()
+
+	inner, ok := t.staticConsumers[topic]
+	if !ok {
+		inner = make(map[types.ConsumerID]struct{})
+		t.staticConsumers[topic]=inner
+	}
+	inner[consumerID] = struct{}{}
 }
 
 // AddSubscription receives already prepared parts
@@ -99,6 +126,21 @@ func (t *Tree) AddSubscription(consumerID types.ConsumerID, parts []string) {
 		// prevNode = currentNode
 		currentNode = childNode
 	}
+}
+
+func (t *Tree) RemoveSubscriptionStatic(consumerID types.ConsumerID, topic types.Topic) {
+	t.staticConsumersMu.Lock()
+	defer t.staticConsumersMu.Unlock()
+
+	inner, ok := t.staticConsumers[topic]
+	if !ok {
+		return
+	}
+	_, ok = inner[consumerID]
+	if !ok {
+		return
+	}
+	delete(inner, consumerID)
 }
 
 func (t *Tree) RemoveSubscription(consumerID types.ConsumerID, parts []string) {

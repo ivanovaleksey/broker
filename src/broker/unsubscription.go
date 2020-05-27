@@ -14,6 +14,15 @@ func (b *Broker) Unsubscribe(id types.ConsumerID, topics []types.Topic) {
 }
 
 func (b *Broker) handleUnsubscribe(id types.ConsumerID, pattern types.Topic) error {
+	isStatic, err := b.topicParser.IsStatic(pattern)
+	if err != nil {
+		return err
+	}
+	if isStatic {
+		b.tree.RemoveSubscriptionStatic(id, pattern)
+		return nil
+	}
+
 	parts, err := b.topicParser.ParsePattern(pattern)
 	if err != nil {
 		return err

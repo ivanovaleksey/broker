@@ -14,6 +14,7 @@ type Broker struct {
 }
 
 type TopicParser interface {
+	IsStatic(topic types.Topic) (bool, error)
 	ParseTopic(types.Topic) ([]string, error)
 	ParsePattern(types.Topic) ([]string, error)
 }
