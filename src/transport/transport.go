@@ -8,7 +8,10 @@ import (
 	"sync"
 )
 
-const bucketsCount = 256
+const (
+	bucketsCount = 256
+	consumersCount = 10000
+)
 
 // type Consumer = pb.MessageBroker_ConsumeServer
 type Consumer interface {
@@ -32,7 +35,7 @@ func NewTransport(ctx context.Context, logger *zap.Logger, b Broker) *Transport 
 		// consumers: make(map[types.ConsumerID]Consumer),
 	}
 	for i := 0; i < bucketsCount; i++ {
-		t.consumers[i] = make(map[types.ConsumerID]Consumer, 1)
+		t.consumers[i] = make(map[types.ConsumerID]Consumer, consumersCount)
 	}
 	return t
 }
