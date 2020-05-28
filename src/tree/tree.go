@@ -12,7 +12,7 @@ type Tree struct {
 	nodeConsumers *ConsumersLog
 
 	staticConsumersLocks [bucketsCountConsumers]sync.RWMutex
-	staticConsumers      [bucketsCountConsumers]map[uint64]map[types.ConsumerID]struct{}
+	staticConsumers      [bucketsCountConsumers]map[uint64][]types.ConsumerID
 }
 
 func NewTree() *Tree {
@@ -39,14 +39,14 @@ func NewTree() *Tree {
 	log := NewConsumersLog()
 
 	t := &Tree{
-		root:            root,
-		nodeConsumers:   log,
+		root:          root,
+		nodeConsumers: log,
 	}
 
 	const staticConsumersSize = 300000
 	// staticConsumers := make(map[uint64]map[types.ConsumerID]struct{}, staticConsumersSize)
 	for i := 0; i < bucketsCountConsumers; i++ {
-		m := make(map[uint64]map[types.ConsumerID]struct{}, staticConsumersSize)
+		m := make(map[uint64][]types.ConsumerID, staticConsumersSize)
 		t.staticConsumers[i] = m
 	}
 
@@ -96,12 +96,23 @@ func (t *Tree) AddSubscriptionStatic(consumerID types.ConsumerID, topic types.To
 	t.staticConsumersLocks[idx].Lock()
 	defer t.staticConsumersLocks[idx].Unlock()
 
+	var alreadySubscribed bool
 	inner, ok := t.staticConsumers[idx][topicHash]
 	if !ok {
-		inner = make(map[types.ConsumerID]struct{})
+		// todo: can get slice from pool?
+		inner = make([]types.ConsumerID, 0, 12)
+	} else {
+		for i := 0; i < len(inner); i++ {
+			if inner[i] == consumerID {
+				alreadySubscribed = true
+				break
+			}
+		}
+	}
+	if !alreadySubscribed {
+		inner = append(inner, consumerID)
 		t.staticConsumers[idx][topicHash] = inner
 	}
-	inner[consumerID] = struct{}{}
 }
 
 // AddSubscription receives already prepared parts
@@ -193,11 +204,22 @@ func (t *Tree) RemoveSubscriptionStatic(consumerID types.ConsumerID, topic types
 	if !ok {
 		return
 	}
-	_, ok = inner[consumerID]
-	if !ok {
+
+	var (
+		found bool
+	)
+	for i := 0; i < len(inner); i++ {
+		if inner[i] == consumerID {
+			found = true
+			inner[i] = inner[len(inner)-1]
+			inner = inner[:len(inner)-1]
+			t.staticConsumers[idx][topicHash] = inner
+			break
+		}
+	}
+	if !found {
 		return
 	}
-	delete(inner, consumerID)
 	if len(inner) == 0 {
 		delete(t.staticConsumers[idx], topicHash)
 	}
