@@ -14,12 +14,13 @@ func (t *Tree) GetConsumers(parts []string) []types.ConsumerID {
 
 	topic := strings.Join(parts, ".")
 	topicHash := types.Topic(topic).Hash()
-	uniq := make(map[types.ConsumerID]struct{})
-	t.staticConsumersMu.RLock()
-	for consumerID := range t.staticConsumers[topicHash] {
+	idx := topicHash % bucketsCountConsumers
+	t.staticConsumersLocks[idx].RLock()
+	uniq := make(map[types.ConsumerID]struct{}, len(t.staticConsumers[idx][topicHash]))
+	for consumerID := range t.staticConsumers[idx][topicHash] {
 		uniq[consumerID] = struct{}{}
 	}
-	t.staticConsumersMu.RUnlock()
+	t.staticConsumersLocks[idx].RUnlock()
 
 	for _, nodeID := range nodeIDs {
 		// todo: consider using bulk method to avoid multiple waits on lock

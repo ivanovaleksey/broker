@@ -5,12 +5,14 @@ import (
 	"sync"
 )
 
+const bucketsCountConsumers = 8
+
 type Tree struct {
 	root          *Node
 	nodeConsumers *ConsumersLog
 
-	staticConsumersMu sync.RWMutex
-	staticConsumers   map[uint64]map[types.ConsumerID]struct{}
+	staticConsumersLocks [bucketsCountConsumers]sync.RWMutex
+	staticConsumers      [bucketsCountConsumers]map[uint64]map[types.ConsumerID]struct{}
 }
 
 func NewTree() *Tree {
@@ -36,26 +38,21 @@ func NewTree() *Tree {
 
 	log := NewConsumersLog()
 
+	t := &Tree{
+		root:            root,
+		nodeConsumers:   log,
+	}
 
-
-	const staticConsumersSize = 3000000
-	staticConsumers := make(map[uint64]map[types.ConsumerID]struct{}, staticConsumersSize)
-
-
-
-
-
-
+	const staticConsumersSize = 300000
+	// staticConsumers := make(map[uint64]map[types.ConsumerID]struct{}, staticConsumersSize)
+	for i := 0; i < bucketsCountConsumers; i++ {
+		m := make(map[uint64]map[types.ConsumerID]struct{}, staticConsumersSize)
+		t.staticConsumers[i] = m
+	}
 
 	const traverseSize = 2000000
 	for i := 0; i < traverseSize; i++ {
 		pool.Put(make([]*Node, 0, 4))
-	}
-
-	t := &Tree{
-		root:            root,
-		nodeConsumers:   log,
-		staticConsumers: staticConsumers,
 	}
 
 	// go func() {
@@ -94,14 +91,15 @@ func NewTree() *Tree {
 
 func (t *Tree) AddSubscriptionStatic(consumerID types.ConsumerID, topic types.Topic) {
 	topicHash := topic.Hash()
+	idx := topicHash % bucketsCountConsumers
 
-	t.staticConsumersMu.Lock()
-	defer t.staticConsumersMu.Unlock()
+	t.staticConsumersLocks[idx].Lock()
+	defer t.staticConsumersLocks[idx].Unlock()
 
-	inner, ok := t.staticConsumers[topicHash]
+	inner, ok := t.staticConsumers[idx][topicHash]
 	if !ok {
 		inner = make(map[types.ConsumerID]struct{})
-		t.staticConsumers[topicHash] = inner
+		t.staticConsumers[idx][topicHash] = inner
 	}
 	inner[consumerID] = struct{}{}
 }
@@ -186,11 +184,12 @@ func (t *Tree) AddSubscription(consumerID types.ConsumerID, parts []string) {
 
 func (t *Tree) RemoveSubscriptionStatic(consumerID types.ConsumerID, topic types.Topic) {
 	topicHash := topic.Hash()
+	idx := topicHash % bucketsCountConsumers
 
-	t.staticConsumersMu.Lock()
-	defer t.staticConsumersMu.Unlock()
+	t.staticConsumersLocks[idx].Lock()
+	defer t.staticConsumersLocks[idx].Unlock()
 
-	inner, ok := t.staticConsumers[topicHash]
+	inner, ok := t.staticConsumers[idx][topicHash]
 	if !ok {
 		return
 	}
@@ -200,7 +199,7 @@ func (t *Tree) RemoveSubscriptionStatic(consumerID types.ConsumerID, topic types
 	}
 	delete(inner, consumerID)
 	if len(inner) == 0 {
-		delete(t.staticConsumers, topicHash)
+		delete(t.staticConsumers[idx], topicHash)
 	}
 }
 
