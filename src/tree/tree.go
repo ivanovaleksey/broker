@@ -29,11 +29,46 @@ func NewTree() *Tree {
 
 	log := NewConsumersLog()
 
+	const staticConsumersSize = 3000000
+	staticConsumers := make(map[types.Topic]map[types.ConsumerID]struct{}, staticConsumersSize)
+
 	t := &Tree{
 		root:            root,
 		nodeConsumers:   log,
-		staticConsumers: make(map[types.Topic]map[types.ConsumerID]struct{}),
+		staticConsumers: staticConsumers,
 	}
+
+	// go func() {
+	// 	fn := func() {
+	// 		t.staticConsumersMu.RLock()
+	// 		size := len(t.staticConsumers)
+	//
+	// 		var max, avg, sum int
+	// 		for _, m := range t.staticConsumers {
+	// 			if len(m) > max {
+	// 				max = len(m)
+	// 			}
+	// 			sum += len(m)
+	// 		}
+	// 		if size > 0 {
+	// 			avg = sum / size
+	// 		}
+	//
+	// 		t.staticConsumersMu.RUnlock()
+	// 		fmt.Printf("size=%d, max=%d,avg=%d,sum=%d\n", size, max, avg, sum)
+	// 	}
+	// 	fn()
+	// 	tc := time.Tick(time.Second * 10)
+	// 	for {
+	// 		select {
+	// 		case <-tc:
+	// 			fn()
+	// 		case <-ctx.Done():
+	// 			return
+	// 		}
+	// 	}
+	// }()
+
 	return t
 }
 
@@ -44,7 +79,7 @@ func (t *Tree) AddSubscriptionStatic(consumerID types.ConsumerID, topic types.To
 	inner, ok := t.staticConsumers[topic]
 	if !ok {
 		inner = make(map[types.ConsumerID]struct{})
-		t.staticConsumers[topic]=inner
+		t.staticConsumers[topic] = inner
 	}
 	inner[consumerID] = struct{}{}
 }
@@ -141,6 +176,9 @@ func (t *Tree) RemoveSubscriptionStatic(consumerID types.ConsumerID, topic types
 		return
 	}
 	delete(inner, consumerID)
+	if len(inner) == 0 {
+		delete(t.staticConsumers, topic)
+	}
 }
 
 func (t *Tree) RemoveSubscription(consumerID types.ConsumerID, parts []string) {
