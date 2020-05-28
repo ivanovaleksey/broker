@@ -41,6 +41,11 @@ func NewTree() *Tree {
 	const staticConsumersSize = 3000000
 	staticConsumers := make(map[types.Topic]map[types.ConsumerID]struct{}, staticConsumersSize)
 
+	const traverseSize = 2000000
+	for i := 0; i < traverseSize; i++ {
+		pool.Put(make([]*Node, 0, 4))
+	}
+
 	t := &Tree{
 		root:            root,
 		nodeConsumers:   log,

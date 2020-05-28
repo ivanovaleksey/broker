@@ -43,13 +43,20 @@ func NewNode() *Node {
 	return n
 }
 
+var pool = sync.Pool{
+	New: func() interface{} {
+		return make([]*Node, 0, 4)
+	},
+}
+
 func (n *Node) ChildrenForTraverse(word string, withSelfHash bool) []*Node {
 	n.childMu.RLock()
 	wordChild := n.Next[word]
 	hashChild := n.Next[NodeHash]
 	starChild := n.Next[NodeStar]
 	n.childMu.RUnlock()
-	out := make([]*Node, 0, 4)
+	// out := make([]*Node, 0, 4)
+	out := pool.Get().([]*Node)
 	out = append(out, wordChild, hashChild, starChild)
 	// if n.IsHash() {
 	// 	out[3] = n
