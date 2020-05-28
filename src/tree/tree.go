@@ -132,7 +132,7 @@ func (t *Tree) AddSubscription(consumerID types.ConsumerID, parts []string) {
 			newNode.SetType(part)
 
 			if lastPart {
-				newNode.Stop = true
+				newNode.stop = 1
 				fn(newNode, currentNode)
 				// t.nodeConsumers.AddConsumer(newNode.ID, consumerID)
 				// // todo: is it ok or should be done in smarter way?

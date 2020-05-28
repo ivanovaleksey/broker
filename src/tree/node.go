@@ -3,6 +3,7 @@ package tree
 import (
 	"math/rand"
 	"sync"
+	"sync/atomic"
 )
 
 const (
@@ -23,8 +24,9 @@ type Node struct {
 	ID   int64
 	Type NodeType
 
-	stopMu sync.RWMutex
-	Stop   bool
+	// stopMu sync.RWMutex
+	// Stop   bool
+	stop int32
 
 	childMu sync.RWMutex
 	// todo: are int hashes more efficient?
@@ -34,7 +36,7 @@ type Node struct {
 func NewNode() *Node {
 	n := &Node{
 		ID:   rand.Int63(),
-		Stop: false,
+		stop: 0,
 		Next: make(map[string]*Node),
 	}
 	return n
@@ -77,15 +79,21 @@ func (n *Node) SetChild(child *Node, part string) {
 }
 
 func (n *Node) IsStop() bool {
-	n.stopMu.RLock()
-	defer n.stopMu.RUnlock()
-	return n.Stop
+	// n.stopMu.RLock()
+	// defer n.stopMu.RUnlock()
+	// return n.Stop
+	return atomic.LoadInt32(&n.stop) == 1
 }
 
 func (n *Node) SetStop(value bool) {
-	n.stopMu.Lock()
-	n.Stop = value
-	n.stopMu.Unlock()
+	// n.stopMu.Lock()
+	// n.Stop = value
+	// n.stopMu.Unlock()
+	var v int32
+	if value {
+		v = 1
+	}
+	atomic.StoreInt32(&n.stop, v)
 }
 
 func (n *Node) SetType(value string) {
