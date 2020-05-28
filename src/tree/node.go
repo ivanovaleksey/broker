@@ -23,9 +23,6 @@ type Node struct {
 	ID   int64
 	Type NodeType
 
-	// todo: remove, just for debug
-	Part string
-
 	stopMu sync.RWMutex
 	Stop   bool
 

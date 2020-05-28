@@ -26,13 +26,11 @@ func NewTree() *Tree {
 
 	star := NewNode()
 	star.Type = NodeTypeStar
-	star.Part = NodeStar
 	star.Next = make(map[string]*Node, starSize)
 	root.SetChild(star, NodeStar)
 
 	hash := NewNode()
 	hash.Type = NodeTypeHash
-	hash.Part = NodeHash
 	hash.Next = make(map[string]*Node, hashSize)
 	root.SetChild(hash, NodeHash)
 
@@ -132,7 +130,6 @@ func (t *Tree) AddSubscription(consumerID types.ConsumerID, parts []string) {
 		if childNode == nil {
 			newNode := NewNode()
 			newNode.SetType(part)
-			newNode.Part = part
 
 			if lastPart {
 				newNode.Stop = true
