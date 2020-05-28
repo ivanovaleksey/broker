@@ -13,9 +13,10 @@ func (t *Tree) GetConsumers(parts []string) []types.ConsumerID {
 	// uniq := make(map[types.ConsumerID]struct{}, len(nodeIDs))
 
 	topic := strings.Join(parts, ".")
+	topicHash := types.Topic(topic).Hash()
 	uniq := make(map[types.ConsumerID]struct{})
 	t.staticConsumersMu.RLock()
-	for consumerID := range t.staticConsumers[topic] {
+	for consumerID := range t.staticConsumers[topicHash] {
 		uniq[consumerID] = struct{}{}
 	}
 	t.staticConsumersMu.RUnlock()

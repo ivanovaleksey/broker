@@ -42,9 +42,9 @@ func (t *Transport) Start() {
 }
 
 type Broker interface {
-	Subscribe(id types.ConsumerID, topics []types.Topic)
+	Subscribe(id types.ConsumerID, topics []string)
 	// todo: consider returning list of remaining subscriptions
-	Unsubscribe(id types.ConsumerID, topics []types.Topic)
+	Unsubscribe(id types.ConsumerID, topics []string)
 	GetConsumers(topic string) ([]types.ConsumerID, error)
 }
 

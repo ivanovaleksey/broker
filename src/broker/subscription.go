@@ -6,21 +6,21 @@ import (
 	"go.uber.org/zap"
 )
 
-func (b *Broker) Subscribe(id types.ConsumerID, topics []types.Topic) {
+func (b *Broker) Subscribe(id types.ConsumerID, topics []string) {
 	for _, topic := range topics {
 		if err := b.handleSubscribe(id, topic); err != nil {
-			b.logger.Error("can't subscribe", zap.Int64("consumer_id", id), zap.String("topic", topic), zap.Error(err))
+			b.logger.Error("can't subscribe", zap.Int64("consumer_id", id), zap.Error(err))
 		}
 	}
 }
 
-func (b *Broker) handleSubscribe(id types.ConsumerID, pattern types.Topic) error {
+func (b *Broker) handleSubscribe(id types.ConsumerID, pattern string) error {
 	isStatic, err := b.topicParser.IsStatic(pattern)
 	if err != nil {
 		return err
 	}
 	if isStatic {
-		b.tree.AddSubscriptionStatic(id, pattern)
+		b.tree.AddSubscriptionStatic(id, types.Topic(pattern))
 		return nil
 	}
 
@@ -41,7 +41,7 @@ func prepareParts(parts []string) []string {
 	for i := 0; i < len(parts); i++ {
 		part := parts[i]
 		if part == tree.NodeHash {
-			nextIdx := i+1
+			nextIdx := i + 1
 			if nextIdx < len(parts) && parts[nextIdx] == tree.NodeHash {
 				// skip sequent #
 				continue

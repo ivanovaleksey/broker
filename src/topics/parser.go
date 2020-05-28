@@ -2,7 +2,6 @@ package topics
 
 import (
 	"errors"
-	"github.com/ivanovaleksey/broker/pkg/types"
 	"regexp"
 	"strings"
 )
@@ -26,18 +25,18 @@ func NewParser() Parser {
 	return Parser{}
 }
 
-func (p Parser) IsStatic(topic types.Topic) (bool, error) {
+func (p Parser) IsStatic(topic string) (bool, error) {
 	if err := p.validate(topic); err != nil {
 		return false, err
 	}
 	return topicRegexp.MatchString(topic), nil
 }
 
-func (p Parser) ParseTopic(topic types.Topic) ([]string, error) {
+func (p Parser) ParseTopic(topic string) ([]string, error) {
 	return p.parse(topic, topicRegexp)
 }
 
-func (p Parser) ParsePattern(pattern types.Topic) ([]string, error) {
+func (p Parser) ParsePattern(pattern string) ([]string, error) {
 	return p.parse(pattern, patternRegexp)
 }
 
@@ -57,7 +56,7 @@ func (p Parser) parse(str string, exp *regexp.Regexp) ([]string, error) {
 	return parts, nil
 }
 
-func (p Parser) validate(topic types.Topic) error {
+func (p Parser) validate(topic string) error {
 	topicLen := len(topic)
 	if topicLen == 0 {
 		return ErrTopicEmpty

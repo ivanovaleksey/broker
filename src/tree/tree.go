@@ -10,7 +10,7 @@ type Tree struct {
 	nodeConsumers *ConsumersLog
 
 	staticConsumersMu sync.RWMutex
-	staticConsumers   map[types.Topic]map[types.ConsumerID]struct{}
+	staticConsumers   map[uint64]map[types.ConsumerID]struct{}
 }
 
 func NewTree() *Tree {
@@ -36,8 +36,16 @@ func NewTree() *Tree {
 
 	log := NewConsumersLog()
 
+
+
 	const staticConsumersSize = 3000000
-	staticConsumers := make(map[types.Topic]map[types.ConsumerID]struct{}, staticConsumersSize)
+	staticConsumers := make(map[uint64]map[types.ConsumerID]struct{}, staticConsumersSize)
+
+
+
+
+
+
 
 	const traverseSize = 2000000
 	for i := 0; i < traverseSize; i++ {
@@ -85,13 +93,15 @@ func NewTree() *Tree {
 }
 
 func (t *Tree) AddSubscriptionStatic(consumerID types.ConsumerID, topic types.Topic) {
+	topicHash := topic.Hash()
+
 	t.staticConsumersMu.Lock()
 	defer t.staticConsumersMu.Unlock()
 
-	inner, ok := t.staticConsumers[topic]
+	inner, ok := t.staticConsumers[topicHash]
 	if !ok {
 		inner = make(map[types.ConsumerID]struct{})
-		t.staticConsumers[topic] = inner
+		t.staticConsumers[topicHash] = inner
 	}
 	inner[consumerID] = struct{}{}
 }
@@ -175,10 +185,12 @@ func (t *Tree) AddSubscription(consumerID types.ConsumerID, parts []string) {
 }
 
 func (t *Tree) RemoveSubscriptionStatic(consumerID types.ConsumerID, topic types.Topic) {
+	topicHash := topic.Hash()
+
 	t.staticConsumersMu.Lock()
 	defer t.staticConsumersMu.Unlock()
 
-	inner, ok := t.staticConsumers[topic]
+	inner, ok := t.staticConsumers[topicHash]
 	if !ok {
 		return
 	}
@@ -188,7 +200,7 @@ func (t *Tree) RemoveSubscriptionStatic(consumerID types.ConsumerID, topic types
 	}
 	delete(inner, consumerID)
 	if len(inner) == 0 {
-		delete(t.staticConsumers, topic)
+		delete(t.staticConsumers, topicHash)
 	}
 }
 

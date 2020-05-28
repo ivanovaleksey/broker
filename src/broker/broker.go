@@ -14,9 +14,9 @@ type Broker struct {
 }
 
 type TopicParser interface {
-	IsStatic(topic types.Topic) (bool, error)
-	ParseTopic(types.Topic) ([]string, error)
-	ParsePattern(types.Topic) ([]string, error)
+	IsStatic(topic string) (bool, error)
+	ParseTopic(string) ([]string, error)
+	ParsePattern(string) ([]string, error)
 }
 
 func NewBroker(l *zap.Logger) *Broker {
