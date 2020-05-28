@@ -14,17 +14,26 @@ type Tree struct {
 }
 
 func NewTree() *Tree {
+	const (
+		rootSize = 1 << 18
+		hashSize = 1 << 15
+		starSize = 1 << 15
+	)
+
 	root := NewNode()
 	root.ID = -1
+	root.Next = make(map[string]*Node, rootSize)
 
 	star := NewNode()
 	star.Type = NodeTypeStar
 	star.Part = NodeStar
+	star.Next = make(map[string]*Node, starSize)
 	root.SetChild(star, NodeStar)
 
 	hash := NewNode()
 	hash.Type = NodeTypeHash
 	hash.Part = NodeHash
+	hash.Next = make(map[string]*Node, hashSize)
 	root.SetChild(hash, NodeHash)
 
 	log := NewConsumersLog()
