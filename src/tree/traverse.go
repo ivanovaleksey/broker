@@ -94,6 +94,7 @@ func (t *Tree) traverseQueue(node *Node, parts []uint64, stopNodes map[types.Nod
 				parts: parts[1:],
 			})
 		}
+		PutTraverseNode(children)
 	}
 
 	for queue.Len() > 0 {
@@ -139,6 +140,7 @@ func (t *Tree) traverseQueue(node *Node, parts []uint64, stopNodes map[types.Nod
 			})
 			fn(n, part, parts)
 		}
+		PutTraverseNode(children)
 
 		queue.Remove(front)
 	}

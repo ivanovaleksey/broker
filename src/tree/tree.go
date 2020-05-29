@@ -51,11 +51,6 @@ func NewTree() *Tree {
 		t.staticConsumers[i] = m
 	}
 
-	const traverseSize = 2000000
-	for i := 0; i < traverseSize; i++ {
-		traversePool.Put(make([]*Node, 0, 4))
-	}
-
 	// go func() {
 	// 	fn := func() {
 	// 		t.staticConsumersMu.RLock()
@@ -239,12 +234,13 @@ func (t *Tree) RemoveSubscription(consumerID types.ConsumerID, parts []uint64) {
 	)
 	currentNode = t.root
 
-	removeFromNode := func(node *Node) {
+	removeConsumerFromNode := func(node *Node) int {
 		left := t.nodeConsumers.RemoveConsumer(node.ID, consumerID)
 		if left == 0 {
-			// todo: remove node?
+			// todo: remove node? put to pool?
 			node.SetStop(false)
 		}
+		return left
 	}
 
 	for i, part := range parts {
@@ -262,12 +258,18 @@ func (t *Tree) RemoveSubscription(consumerID types.ConsumerID, parts []uint64) {
 				continue
 			}
 			// todo: тут плохо то, что флаг stop-node еще не значит, что имеено этот консьюмер на нее подписан
-			removeFromNode(currentNode)
+			left := removeConsumerFromNode(currentNode)
 			if currentNode.IsHash() {
 				// todo: can be nil and panic?
 				if prevNode.ID > 0 {
-					removeFromNode(prevNode)
+					// todo: how to delete node here?
+					removeConsumerFromNode(prevNode)
 				}
+			}
+			if left == 0 && prevNode.ID > 0 {
+				prevNode.RemoveChild(part)
+				currentNode.Reset()
+				NodePool.Put(currentNode)
 			}
 		}
 	}

@@ -1,8 +1,8 @@
 package tree
 
 import (
-	"github.com/ivanovaleksey/broker/src/topics"
 	"github.com/ivanovaleksey/broker/pkg/types"
+	"github.com/ivanovaleksey/broker/src/topics"
 	"math/rand"
 	"sync"
 	"sync/atomic"
@@ -22,20 +22,6 @@ const (
 	NodeTypeWord
 )
 
-var traversePool = sync.Pool{
-	New: func() interface{} {
-		return make([]*Node, 0, 4)
-	},
-}
-
-var NodePoolCount int32
-var NodePool = sync.Pool{
-	New: func() interface{} {
-		atomic.AddInt32(&NodePoolCount, 1)
-		return NewNode()
-	},
-}
-
 type Node struct {
 	ID   types.NodeID
 	Type NodeType
@@ -47,8 +33,7 @@ type Node struct {
 	childMu   sync.RWMutex
 	childHash *Node
 	childStar *Node
-	// todo: are int hashes more efficient?
-	Next map[uint64]*Node
+	Next      map[uint64]*Node
 }
 
 func NewNode() *Node {
@@ -61,20 +46,19 @@ func NewNode() *Node {
 	return n
 }
 
-type Nodes struct {
+type TraverseNode struct {
 	Hash     *Node
 	Star     *Node
 	Word     *Node
 	SelfHash *Node
 }
 
-func (n *Node) ChildrenForTraverse(word uint64, withSelfHash bool) Nodes {
+func (n *Node) ChildrenForTraverse(word uint64, withSelfHash bool) *TraverseNode {
+	out := GetTraverseNode()
 	n.childMu.RLock()
-	out := Nodes{
-		Hash:     n.childHash,
-		Star:     n.childStar,
-		Word:     n.Next[word],
-	}
+	out.Hash = n.childHash
+	out.Star = n.childStar
+	out.Word = n.Next[word]
 	n.childMu.RUnlock()
 	if n.IsHash() && withSelfHash {
 		out.SelfHash = n
@@ -104,6 +88,19 @@ func (n *Node) SetChild(child *Node, part uint64) {
 		n.childHash = child
 	default:
 		n.Next[part] = child
+	}
+	n.childMu.Unlock()
+}
+
+func (n *Node) RemoveChild(part uint64) {
+	n.childMu.Lock()
+	switch part {
+	case topics.HashStar:
+		n.childStar = nil
+	case topics.HashHash:
+		n.childHash = nil
+	default:
+		delete(n.Next, part)
 	}
 	n.childMu.Unlock()
 }
@@ -139,4 +136,11 @@ func (n *Node) SetType(value uint64) {
 
 func (n *Node) IsHash() bool {
 	return n.Type == NodeTypeHash
+}
+
+func (n *Node) Reset() {
+	n.childMu.Lock()
+	n.childStar = nil
+	n.childHash = nil
+	n.childMu.Unlock()
 }
