@@ -4,13 +4,16 @@ import (
 	"github.com/ivanovaleksey/broker/pkg/types"
 	"github.com/ivanovaleksey/broker/src/topics"
 	"sync"
+	"sync/atomic"
 )
 
 const bucketsCountConsumers = 8
 
 type Tree struct {
-	root          *Node
-	nodeConsumers *ConsumersLog
+	root *Node
+
+	nodeConsumersActive int32
+	nodeConsumers       *ConsumersLog
 
 	staticConsumersLocks [bucketsCountConsumers]sync.RWMutex
 	staticConsumers      [bucketsCountConsumers]map[uint64][]types.ConsumerID
@@ -116,6 +119,7 @@ func (t *Tree) AddSubscription(consumerID types.ConsumerID, parts []uint64) {
 	if t.root == nil {
 		return
 	}
+	atomic.CompareAndSwapInt32(&t.nodeConsumersActive, 0, 1)
 
 	var (
 		lastPart    bool

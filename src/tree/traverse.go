@@ -3,11 +3,10 @@ package tree
 import (
 	"container/list"
 	"github.com/ivanovaleksey/broker/pkg/types"
+	"sync/atomic"
 )
 
 func (t *Tree) GetConsumers(topicHash uint64, parts []uint64) []types.ConsumerID {
-	nodeIDs := t.traverse(parts)
-
 	// todo: there may be duplicates, because placeholders may be treated differently
 	// e.g., in hash case both 2 and 2-># can stop nodes for the same pattern
 	// uniq := make(map[types.ConsumerID]struct{}, len(nodeIDs))
@@ -21,15 +20,18 @@ func (t *Tree) GetConsumers(topicHash uint64, parts []uint64) []types.ConsumerID
 	}
 	t.staticConsumersLocks[idx].RUnlock()
 
-	for _, nodeID := range nodeIDs {
-		// todo: consider using bulk method to avoid multiple waits on lock
-		ids := t.nodeConsumers.GetConsumers(nodeID)
-		for consumerID := range ids {
-			_, ok := uniq[consumerID]
-			if ok {
-				continue
+	if atomic.LoadInt32(&t.nodeConsumersActive) > 0 {
+		nodeIDs := t.traverse(parts)
+		for _, nodeID := range nodeIDs {
+			// todo: consider using bulk method to avoid multiple waits on lock
+			ids := t.nodeConsumers.GetConsumers(nodeID)
+			for consumerID := range ids {
+				_, ok := uniq[consumerID]
+				if ok {
+					continue
+				}
+				uniq[consumerID] = struct{}{}
 			}
-			uniq[consumerID] = struct{}{}
 		}
 	}
 
