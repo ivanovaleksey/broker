@@ -14,21 +14,33 @@ func (b *Broker) Unsubscribe(id types.ConsumerID, topics []string) {
 }
 
 func (b *Broker) handleUnsubscribe(id types.ConsumerID, pattern string) error {
-	isStatic, err := b.topicParser.IsStatic(pattern)
-	if err != nil {
-		return err
+	if len(pattern) == 0 {
+		return nil
 	}
-	if isStatic {
-		b.tree.RemoveSubscriptionStatic(id, types.Topic(pattern))
+	info := b.bytesTopic.Parse(pattern)
+	if info.IsStatic {
+		b.tree.RemoveSubscriptionStatic(id, info.Part)
 		return nil
 	}
 
-	parts, err := b.topicParser.ParsePattern(pattern)
-	if err != nil {
-		return err
-	}
-
-	// parts = prepareParts(parts)
-	b.tree.RemoveSubscription(id, parts)
+	b.tree.RemoveSubscription(id, info.Parts)
 	return nil
+
+	// isStatic, err := b.topicParser.IsStatic(pattern)
+	// if err != nil {
+	// 	return err
+	// }
+	// if isStatic {
+	// 	b.tree.RemoveSubscriptionStatic(id, types.Topic(pattern))
+	// 	return nil
+	// }
+	//
+	// parts, err := b.topicParser.ParsePattern(pattern)
+	// if err != nil {
+	// 	return err
+	// }
+	//
+	// // parts = prepareParts(parts)
+	// b.tree.RemoveSubscription(id, parts)
+	// return nil
 }

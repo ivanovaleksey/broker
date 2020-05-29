@@ -2,18 +2,16 @@ package tree
 
 import (
 	"github.com/ivanovaleksey/broker/pkg/types"
-	"strings"
 )
 
-func (t *Tree) GetConsumers(parts []string) []types.ConsumerID {
+func (t *Tree) GetConsumers(topicHash uint64, parts []uint64) []types.ConsumerID {
 	nodeIDs := t.traverse(parts)
 
 	// todo: there may be duplicates, because placeholders may be treated differently
 	// e.g., in hash case both 2 and 2-># can stop nodes for the same pattern
 	// uniq := make(map[types.ConsumerID]struct{}, len(nodeIDs))
 
-	topic := strings.Join(parts, ".")
-	topicHash := types.Topic(topic).Hash()
+	// topicHash := types.Topic(topic).Hash()
 	idx := topicHash % bucketsCountConsumers
 	t.staticConsumersLocks[idx].RLock()
 	uniq := make(map[types.ConsumerID]struct{}, len(t.staticConsumers[idx][topicHash]))
@@ -41,7 +39,7 @@ func (t *Tree) GetConsumers(parts []string) []types.ConsumerID {
 	return out
 }
 
-func (t *Tree) traverse(parts []string) []types.NodeID {
+func (t *Tree) traverse(parts []uint64) []types.NodeID {
 	// todo: need this check?
 	if len(parts) == 0 {
 		return nil
@@ -60,7 +58,7 @@ func (t *Tree) traverse(parts []string) []types.NodeID {
 
 // todo: think about non-recursive variant
 // traverseNode returns true if last part is happen to be on a stop-node
-func (t *Tree) traverseNode(node *Node, parts []string, stopNodes map[types.NodeID]struct{}) {
+func (t *Tree) traverseNode(node *Node, parts []uint64, stopNodes map[types.NodeID]struct{}) {
 	if node == nil {
 		panic("node should not be nil")
 	}

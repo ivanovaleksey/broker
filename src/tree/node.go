@@ -1,6 +1,7 @@
 package tree
 
 import (
+	"github.com/ivanovaleksey/broker/src/topics"
 	"math/rand"
 	"sync"
 	"sync/atomic"
@@ -30,14 +31,15 @@ type Node struct {
 
 	childMu sync.RWMutex
 	// todo: are int hashes more efficient?
-	Next map[string]*Node
+	Next map[uint64]*Node
 }
 
 func NewNode() *Node {
 	n := &Node{
 		ID:   rand.Int63(),
 		stop: 0,
-		Next: make(map[string]*Node),
+		// todo: maps from pool?
+		Next: make(map[uint64]*Node),
 	}
 	return n
 }
@@ -48,11 +50,11 @@ var pool = sync.Pool{
 	},
 }
 
-func (n *Node) ChildrenForTraverse(word string, withSelfHash bool) []*Node {
+func (n *Node) ChildrenForTraverse(word uint64, withSelfHash bool) []*Node {
 	n.childMu.RLock()
 	wordChild := n.Next[word]
-	hashChild := n.Next[NodeHash]
-	starChild := n.Next[NodeStar]
+	hashChild := n.Next[topics.HashHash]
+	starChild := n.Next[topics.HashStar]
 	n.childMu.RUnlock()
 	// out := make([]*Node, 0, 4)
 	out := pool.Get().([]*Node)
@@ -66,13 +68,13 @@ func (n *Node) ChildrenForTraverse(word string, withSelfHash bool) []*Node {
 	return out
 }
 
-func (n *Node) Child(part string) *Node {
+func (n *Node) Child(part uint64) *Node {
 	n.childMu.RLock()
 	defer n.childMu.RUnlock()
 	return n.Next[part]
 }
 
-func (n *Node) SetChild(child *Node, part string) {
+func (n *Node) SetChild(child *Node, part uint64) {
 	n.childMu.Lock()
 	n.Next[part] = child
 	n.childMu.Unlock()
@@ -96,11 +98,11 @@ func (n *Node) SetStop(value bool) {
 	atomic.StoreInt32(&n.stop, v)
 }
 
-func (n *Node) SetType(value string) {
+func (n *Node) SetType(value uint64) {
 	switch value {
-	case NodeStar:
+	case topics.HashStar:
 		n.Type = NodeTypeStar
-	case NodeHash:
+	case topics.HashHash:
 		n.Type = NodeTypeHash
 	default:
 		n.Type = NodeTypeWord

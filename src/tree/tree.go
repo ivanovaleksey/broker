@@ -2,6 +2,7 @@ package tree
 
 import (
 	"github.com/ivanovaleksey/broker/pkg/types"
+	"github.com/ivanovaleksey/broker/src/topics"
 	"sync"
 )
 
@@ -24,17 +25,17 @@ func NewTree() *Tree {
 
 	root := NewNode()
 	root.ID = -1
-	root.Next = make(map[string]*Node, rootSize)
+	root.Next = make(map[uint64]*Node, rootSize)
 
 	star := NewNode()
 	star.Type = NodeTypeStar
-	star.Next = make(map[string]*Node, starSize)
-	root.SetChild(star, NodeStar)
+	star.Next = make(map[uint64]*Node, starSize)
+	root.SetChild(star, topics.HashStar)
 
 	hash := NewNode()
 	hash.Type = NodeTypeHash
-	hash.Next = make(map[string]*Node, hashSize)
-	root.SetChild(hash, NodeHash)
+	hash.Next = make(map[uint64]*Node, hashSize)
+	root.SetChild(hash, topics.HashHash)
 
 	log := NewConsumersLog()
 
@@ -89,8 +90,8 @@ func NewTree() *Tree {
 	return t
 }
 
-func (t *Tree) AddSubscriptionStatic(consumerID types.ConsumerID, topic types.Topic) {
-	topicHash := topic.Hash()
+func (t *Tree) AddSubscriptionStatic(consumerID types.ConsumerID, topicHash uint64) {
+	// topicHash := topic.Hash()
 	idx := topicHash % bucketsCountConsumers
 
 	t.staticConsumersLocks[idx].Lock()
@@ -116,7 +117,7 @@ func (t *Tree) AddSubscriptionStatic(consumerID types.ConsumerID, topic types.To
 }
 
 // AddSubscription receives already prepared parts
-func (t *Tree) AddSubscription(consumerID types.ConsumerID, parts []string) {
+func (t *Tree) AddSubscription(consumerID types.ConsumerID, parts []uint64) {
 	if t.root == nil {
 		return
 	}
@@ -193,8 +194,8 @@ func (t *Tree) AddSubscription(consumerID types.ConsumerID, parts []string) {
 	}
 }
 
-func (t *Tree) RemoveSubscriptionStatic(consumerID types.ConsumerID, topic types.Topic) {
-	topicHash := topic.Hash()
+func (t *Tree) RemoveSubscriptionStatic(consumerID types.ConsumerID, topicHash uint64) {
+	// topicHash := topic.Hash()
 	idx := topicHash % bucketsCountConsumers
 
 	t.staticConsumersLocks[idx].Lock()
@@ -225,7 +226,7 @@ func (t *Tree) RemoveSubscriptionStatic(consumerID types.ConsumerID, topic types
 	}
 }
 
-func (t *Tree) RemoveSubscription(consumerID types.ConsumerID, parts []string) {
+func (t *Tree) RemoveSubscription(consumerID types.ConsumerID, parts []uint64) {
 	if t.root == nil {
 		return
 	}

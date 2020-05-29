@@ -15,23 +15,35 @@ func (b *Broker) Subscribe(id types.ConsumerID, topics []string) {
 }
 
 func (b *Broker) handleSubscribe(id types.ConsumerID, pattern string) error {
-	isStatic, err := b.topicParser.IsStatic(pattern)
-	if err != nil {
-		return err
+	if len(pattern) == 0 {
+		return nil
 	}
-	if isStatic {
-		b.tree.AddSubscriptionStatic(id, types.Topic(pattern))
+	info := b.bytesTopic.Parse(pattern)
+	if info.IsStatic {
+		b.tree.AddSubscriptionStatic(id, info.Part)
 		return nil
 	}
 
-	parts, err := b.topicParser.ParsePattern(pattern)
-	if err != nil {
-		return err
-	}
-
-	// parts = prepareParts(parts)
-	b.tree.AddSubscription(id, parts)
+	b.tree.AddSubscription(id, info.Parts)
 	return nil
+
+	// isStatic, err := b.topicParser.IsStatic(pattern)
+	// if err != nil {
+	// 	return err
+	// }
+	// if isStatic {
+	// 	b.tree.AddSubscriptionStatic(id, types.Topic(pattern))
+	// 	return nil
+	// }
+	//
+	// parts, err := b.topicParser.ParsePattern(pattern)
+	// if err != nil {
+	// 	return err
+	// }
+	//
+	// // parts = prepareParts(parts)
+	// b.tree.AddSubscription(id, parts)
+	// return nil
 }
 
 // todo: really need to combine sequent hashes?

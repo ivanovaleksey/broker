@@ -8,7 +8,9 @@ import (
 )
 
 type Broker struct {
-	logger      *zap.Logger
+	logger *zap.Logger
+
+	bytesTopic  *topics.BytesParser
 	topicParser TopicParser
 	tree        *tree.Tree
 }
@@ -22,18 +24,24 @@ type TopicParser interface {
 func NewBroker(l *zap.Logger) *Broker {
 	return &Broker{
 		logger:      l,
+		bytesTopic:  topics.NewBytesParser(),
 		topicParser: topics.NewParser(),
 		tree:        tree.NewTree(),
 	}
 }
 
 func (b *Broker) GetConsumers(topic string) ([]types.ConsumerID, error) {
-	parts, err := b.topicParser.ParseTopic(topic)
-	if err != nil {
-		return nil, err
+	// parts, err := b.topicParser.ParseTopic(topic)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	if len(topic) == 0 {
+		return nil, nil
 	}
 
-	consumerIDs := b.tree.GetConsumers(parts)
+	topicHash := b.bytesTopic.Hash(topic)
+	parts := b.bytesTopic.Parts(topic)
+	consumerIDs := b.tree.GetConsumers(topicHash, parts)
 	return consumerIDs, nil
 }
 
