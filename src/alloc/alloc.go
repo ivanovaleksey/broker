@@ -1,34 +1,31 @@
 package alloc
 
 import (
-	"fmt"
 	"github.com/ivanovaleksey/broker/pkg/hash"
 	"github.com/ivanovaleksey/broker/src/tree"
-	"sync/atomic"
-	"time"
 )
 
 func Alloc() {
 	allocHashes()
 	allocNodes()
 	allocTraverseNodes()
-	go func() {
-		fn := func() {
-			fmt.Printf("traverse=%d,nodes=%d,hashes=%d\n",
-				atomic.LoadInt32(&tree.TraversePoolCount),
-				atomic.LoadInt32(&tree.NodePoolCount),
-				atomic.LoadInt32(&hash.PoolCount),
-			)
-		}
-		fn()
-		tc := time.Tick(time.Second * 10)
-		for {
-			select {
-			case <-tc:
-				fn()
-			}
-		}
-	}()
+	// go func() {
+	// 	fn := func() {
+	// 		fmt.Printf("traverse=%d,nodes=%d,hashes=%d\n",
+	// 			atomic.LoadInt32(&node.TraversePoolCount),
+	// 			atomic.LoadInt32(&node.NodePoolCount),
+	// 			atomic.LoadInt32(&hash.PoolCount),
+	// 		)
+	// 	}
+	// 	fn()
+	// 	tc := time.Tick(time.Second * 10)
+	// 	for {
+	// 		select {
+	// 		case <-tc:
+	// 			fn()
+	// 		}
+	// 	}
+	// }()
 }
 
 func allocHashes() {

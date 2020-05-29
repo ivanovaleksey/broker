@@ -3,7 +3,6 @@ package hash
 import (
 	"hash/maphash"
 	"sync"
-	"sync/atomic"
 )
 
 var seed maphash.Seed
@@ -15,7 +14,7 @@ func init() {
 var PoolCount int32
 var Pool = sync.Pool{
 	New: func() interface{} {
-		atomic.AddInt32(&PoolCount, 1)
+		// atomic.AddInt32(&PoolCount, 1)
 		return new(maphash.Hash)
 	},
 }
