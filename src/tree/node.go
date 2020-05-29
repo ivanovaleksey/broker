@@ -21,6 +21,20 @@ const (
 	NodeTypeWord
 )
 
+var traversePool = sync.Pool{
+	New: func() interface{} {
+		return make([]*Node, 0, 4)
+	},
+}
+
+var NodePoolCount int32
+var NodePool = sync.Pool{
+	New: func() interface{} {
+		atomic.AddInt32(&NodePoolCount, 1)
+		return NewNode()
+	},
+}
+
 type Node struct {
 	ID   int64
 	Type NodeType
@@ -44,12 +58,6 @@ func NewNode() *Node {
 	return n
 }
 
-var pool = sync.Pool{
-	New: func() interface{} {
-		return make([]*Node, 0, 4)
-	},
-}
-
 func (n *Node) ChildrenForTraverse(word uint64, withSelfHash bool) []*Node {
 	n.childMu.RLock()
 	wordChild := n.Next[word]
@@ -57,7 +65,7 @@ func (n *Node) ChildrenForTraverse(word uint64, withSelfHash bool) []*Node {
 	starChild := n.Next[topics.HashStar]
 	n.childMu.RUnlock()
 	// out := make([]*Node, 0, 4)
-	out := pool.Get().([]*Node)
+	out := traversePool.Get().([]*Node)
 	out = append(out, wordChild, hashChild, starChild)
 	// if n.IsHash() {
 	// 	out[3] = n

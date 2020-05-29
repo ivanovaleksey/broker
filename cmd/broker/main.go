@@ -6,6 +6,7 @@ import (
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	pb "github.com/ivanovaleksey/broker/pkg/pb/broker_fast"
+	"github.com/ivanovaleksey/broker/src/alloc"
 	"github.com/ivanovaleksey/broker/src/broker"
 	"github.com/ivanovaleksey/broker/src/transport"
 	"go.uber.org/zap"
@@ -64,6 +65,8 @@ func main() {
 	srv := grpc.NewServer(opts...)
 	brk := broker.NewBroker(logger)
 	trt := transport.NewTransport(ctx, logger, brk)
+
+	alloc.Alloc()
 	pb.RegisterMessageBrokerServer(srv, trt)
 	trt.Start()
 

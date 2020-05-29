@@ -53,7 +53,7 @@ func NewTree() *Tree {
 
 	const traverseSize = 2000000
 	for i := 0; i < traverseSize; i++ {
-		pool.Put(make([]*Node, 0, 4))
+		traversePool.Put(make([]*Node, 0, 4))
 	}
 
 	// go func() {
@@ -148,7 +148,8 @@ func (t *Tree) AddSubscription(consumerID types.ConsumerID, parts []uint64) {
 
 		childNode := currentNode.Child(part)
 		if childNode == nil {
-			newNode := NewNode()
+			// newNode := NewNode()
+			newNode := NodePool.Get().(*Node)
 			newNode.SetType(part)
 
 			if lastPart {
