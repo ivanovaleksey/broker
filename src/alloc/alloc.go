@@ -3,13 +3,14 @@ package alloc
 import (
 	"github.com/ivanovaleksey/broker/pkg/hash"
 	"github.com/ivanovaleksey/broker/pkg/list"
+	"github.com/ivanovaleksey/broker/src/node"
 	"github.com/ivanovaleksey/broker/src/tree"
 )
 
 func Alloc() {
-	allocHashes()
-	allocNodes()
-	allocListElements()
+	// allocHashes()
+	// allocNodes()
+	// allocListElements()
 	// allocTraverseNodes()
 	// go func() {
 	// 	fn := func() {
@@ -47,9 +48,9 @@ func allocHashes() {
 func allocNodes() {
 	{
 		const size = 1000000
-		var items [size]interface{}
+		var items [size]*node.Node
 		for i := 0; i < size; i++ {
-			items[i] = tree.NodePool.Get()
+			items[i] = tree.NodePool.Get().(*node.Node)
 		}
 		for i := 0; i < size; i++ {
 			tree.NodePool.Put(items[i])
@@ -72,10 +73,10 @@ func allocTraverseNodes() {
 
 func allocListElements() {
 	{
-		const size = 5000000
-		var items [size]interface{}
+		const size = 1000000
+		var items [size]*list.Element
 		for i := 0; i < size; i++ {
-			items[i] = list.ElementPool.Get()
+			items[i] = list.ElementPool.Get().(*list.Element)
 		}
 		for i := 0; i < size; i++ {
 			list.ElementPool.Put(items[i])
