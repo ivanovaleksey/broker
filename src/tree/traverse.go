@@ -83,8 +83,7 @@ func (t *Tree) traverseQueue(nd *node.Node, parts []uint64, stopNodes map[types.
 	// 	// PutTraverseNode(children)
 	// }
 
-	el := queue.Pop()
-	for ; el != nil; el = queue.Pop() {
+	for el := queue.Pop(); el != nil; el = queue.Pop() {
 		el := el
 		node := el.Node
 		parts := el.Parts

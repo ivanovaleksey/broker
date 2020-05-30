@@ -3,6 +3,8 @@ package topics
 import (
 	"bytes"
 	"github.com/ivanovaleksey/broker/pkg/hash"
+	"reflect"
+	"unsafe"
 )
 
 const (
@@ -80,7 +82,13 @@ func (t *BytesParser) Hash(str string) uint64 {
 
 func (t *BytesParser) Parts(str string) []uint64 {
 	h := hash.GetHash()
-	parts := bytes.Split([]byte(str), bytesDot[:])
+	hdr := *(*reflect.StringHeader)(unsafe.Pointer(&str))
+	bytesStr := *(*[]byte)(unsafe.Pointer(&reflect.SliceHeader{
+		Data: hdr.Data,
+		Len:  hdr.Len,
+		Cap:  hdr.Len,
+	}))
+	parts := bytes.Split(bytesStr, bytesDot[:])
 	out := make([]uint64, 0, len(parts))
 	for i := 0; i < len(parts); i++ {
 		if bytes.Equal(parts[i], bytesHash[:]) {
