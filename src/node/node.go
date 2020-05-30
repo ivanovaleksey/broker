@@ -36,10 +36,7 @@ type Node struct {
 
 func NewNode() *Node {
 	n := &Node{
-		ID:   rand.Int63(),
-		Stop: 0,
-		// todo: maps from pool?
-		Next: make(map[uint64]*Node),
+		ID: rand.Int63(),
 	}
 	return n
 }
@@ -86,6 +83,9 @@ func (n *Node) SetChild(child *Node, part uint64) {
 	case topics.HashHash:
 		n.childHash = child
 	default:
+		if n.Next == nil {
+			n.Next = make(map[uint64]*Node)
+		}
 		n.Next[part] = child
 	}
 	n.childMu.Unlock()
