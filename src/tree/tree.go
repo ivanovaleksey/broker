@@ -2,6 +2,7 @@ package tree
 
 import (
 	"github.com/ivanovaleksey/broker/pkg/types"
+	"github.com/ivanovaleksey/broker/src/node"
 	"github.com/ivanovaleksey/broker/src/topics"
 	"sync"
 	"sync/atomic"
@@ -10,7 +11,7 @@ import (
 const bucketsCountConsumers = 8
 
 type Tree struct {
-	root *Node
+	root *node.Node
 
 	nodeConsumersActive int32
 	nodeConsumers       *ConsumersLog
@@ -26,18 +27,18 @@ func NewTree() *Tree {
 		starSize = 1 << 15
 	)
 
-	root := NewNode()
+	root := node.NewNode()
 	root.ID = -1
-	root.Next = make(map[uint64]*Node, rootSize)
+	root.Next = make(map[uint64]*node.Node, rootSize)
 
-	star := NewNode()
-	star.Type = NodeTypeStar
-	star.Next = make(map[uint64]*Node, starSize)
+	star := node.NewNode()
+	star.Type = node.NodeTypeStar
+	star.Next = make(map[uint64]*node.Node, starSize)
 	root.SetChild(star, topics.HashStar)
 
-	hash := NewNode()
-	hash.Type = NodeTypeHash
-	hash.Next = make(map[uint64]*Node, hashSize)
+	hash := node.NewNode()
+	hash.Type = node.NodeTypeHash
+	hash.Next = make(map[uint64]*node.Node, hashSize)
 	root.SetChild(hash, topics.HashHash)
 
 	log := NewConsumersLog()
@@ -123,12 +124,12 @@ func (t *Tree) AddSubscription(consumerID types.ConsumerID, parts []uint64) {
 
 	var (
 		lastPart    bool
-		currentNode *Node
+		currentNode *node.Node
 		// prevNode    *Node
 	)
 	currentNode = t.root
 
-	fn := func(childNode, parentNode *Node) {
+	fn := func(childNode, parentNode *node.Node) {
 		t.nodeConsumers.AddConsumer(childNode.ID, consumerID)
 		// todo: is it ok or should be done in smarter way?
 		if childNode.IsHash() {
@@ -148,11 +149,11 @@ func (t *Tree) AddSubscription(consumerID types.ConsumerID, parts []uint64) {
 		childNode := currentNode.Child(part)
 		if childNode == nil {
 			// newNode := NewNode()
-			newNode := NodePool.Get().(*Node)
+			newNode := NodePool.Get().(*node.Node)
 			newNode.SetType(part)
 
 			if lastPart {
-				newNode.stop = 1
+				newNode.Stop = 1
 				fn(newNode, currentNode)
 				// t.nodeConsumers.AddConsumer(newNode.ID, consumerID)
 				// // todo: is it ok or should be done in smarter way?
@@ -233,12 +234,12 @@ func (t *Tree) RemoveSubscription(consumerID types.ConsumerID, parts []uint64) {
 
 	var (
 		lastPart    bool
-		currentNode *Node
-		prevNode    *Node
+		currentNode *node.Node
+		prevNode    *node.Node
 	)
 	currentNode = t.root
 
-	removeConsumerFromNode := func(node *Node) int {
+	removeConsumerFromNode := func(node *node.Node) int {
 		left := t.nodeConsumers.RemoveConsumer(node.ID, consumerID)
 		if left == 0 {
 			// todo: remove node? put to pool?

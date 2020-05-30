@@ -2,18 +2,21 @@ package alloc
 
 import (
 	"github.com/ivanovaleksey/broker/pkg/hash"
+	"github.com/ivanovaleksey/broker/pkg/list"
 	"github.com/ivanovaleksey/broker/src/tree"
 )
 
 func Alloc() {
 	allocHashes()
 	allocNodes()
-	allocTraverseNodes()
+	allocListElements()
+	// allocTraverseNodes()
 	// go func() {
 	// 	fn := func() {
-	// 		fmt.Printf("traverse=%d,nodes=%d,hashes=%d\n",
-	// 			atomic.LoadInt32(&node.TraversePoolCount),
-	// 			atomic.LoadInt32(&node.NodePoolCount),
+	// 		fmt.Printf("list=%d,nodes=%d,hashes=%d\n",
+	// 			// atomic.LoadInt32(&node.TraversePoolCount),
+	// 			atomic.LoadInt32(&list.ElementPoolCount),
+	// 			atomic.LoadInt32(&tree.NodePoolCount),
 	// 			atomic.LoadInt32(&hash.PoolCount),
 	// 		)
 	// 	}
@@ -30,7 +33,7 @@ func Alloc() {
 
 func allocHashes() {
 	{
-		const size = 100000
+		const size = 1000
 		var items [size]interface{}
 		for i := 0; i < size; i++ {
 			items[i] = hash.Pool.Get()
@@ -63,6 +66,19 @@ func allocTraverseNodes() {
 		}
 		for i := 0; i < size; i++ {
 			tree.TraversePool.Put(items[i])
+		}
+	}
+}
+
+func allocListElements() {
+	{
+		const size = 5000000
+		var items [size]interface{}
+		for i := 0; i < size; i++ {
+			items[i] = list.ElementPool.Get()
+		}
+		for i := 0; i < size; i++ {
+			list.ElementPool.Put(items[i])
 		}
 	}
 }

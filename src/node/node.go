@@ -1,4 +1,4 @@
-package tree
+package node
 
 import (
 	"github.com/ivanovaleksey/broker/pkg/types"
@@ -26,9 +26,7 @@ type Node struct {
 	ID   types.NodeID
 	Type NodeType
 
-	// stopMu sync.RWMutex
-	// Stop   bool
-	stop int32
+	Stop int32
 
 	childMu   sync.RWMutex
 	childHash *Node
@@ -39,7 +37,7 @@ type Node struct {
 func NewNode() *Node {
 	n := &Node{
 		ID:   rand.Int63(),
-		stop: 0,
+		Stop: 0,
 		// todo: maps from pool?
 		Next: make(map[uint64]*Node),
 	}
@@ -53,8 +51,9 @@ type TraverseNode struct {
 	SelfHash *Node
 }
 
-func (n *Node) ChildrenForTraverse(word uint64, withSelfHash bool) *TraverseNode {
-	out := GetTraverseNode()
+func (n *Node) ChildrenForTraverse(word uint64, withSelfHash bool) TraverseNode {
+	// out := GetTraverseNode()
+	out := TraverseNode{}
 	n.childMu.RLock()
 	out.Hash = n.childHash
 	out.Star = n.childStar
@@ -109,7 +108,7 @@ func (n *Node) IsStop() bool {
 	// n.stopMu.RLock()
 	// defer n.stopMu.RUnlock()
 	// return n.Stop
-	return atomic.LoadInt32(&n.stop) == 1
+	return atomic.LoadInt32(&n.Stop) == 1
 }
 
 func (n *Node) SetStop(value bool) {
@@ -120,7 +119,7 @@ func (n *Node) SetStop(value bool) {
 	if value {
 		v = 1
 	}
-	atomic.StoreInt32(&n.stop, v)
+	atomic.StoreInt32(&n.Stop, v)
 }
 
 func (n *Node) SetType(value uint64) {

@@ -1,8 +1,9 @@
 package tree
 
 import (
-	"container/list"
+	"github.com/ivanovaleksey/broker/pkg/list"
 	"github.com/ivanovaleksey/broker/pkg/types"
+	"github.com/ivanovaleksey/broker/src/node"
 	"sync/atomic"
 )
 
@@ -60,56 +61,39 @@ func (t *Tree) traverse(parts []uint64) []types.NodeID {
 }
 
 // todo: for now it doesn't work with subsequent hashes
-func (t *Tree) traverseQueue(node *Node, parts []uint64, stopNodes map[types.NodeID]struct{}) {
-	type NodeWithParts struct {
-		node  *Node
-		parts []uint64
-	}
-
-	if node == nil {
+func (t *Tree) traverseQueue(nd *node.Node, parts []uint64, stopNodes map[types.NodeID]struct{}) {
+	if nd == nil {
 		panic("node should not be nil")
 	}
 
-	queue := list.New()
-	queue.PushBack(&NodeWithParts{
-		node:  node,
-		parts: parts,
-	})
+	queue := list.NewList()
+	queue.Push(nd, parts)
 
-	fn := func(hashNode *Node, part uint64, parts []uint64) {
-		children := hashNode.ChildrenForTraverse(part, false)
-		if n := children.Word; n != nil {
-			queue.PushBack(&NodeWithParts{
-				node:  n,
-				parts: parts[1:],
-			})
-		}
-		if n := children.Star; n != nil {
-			queue.PushBack(&NodeWithParts{
-				node:  n,
-				parts: parts[1:],
-			})
-		}
-		if n := children.Hash; n != nil {
-			queue.PushBack(&NodeWithParts{
-				node:  n,
-				parts: parts[1:],
-			})
-		}
-		PutTraverseNode(children)
-	}
+	// fn := func(hashNode *node.Node, part uint64, parts []uint64) {
+	// 	children := hashNode.ChildrenForTraverse(part, false)
+	// 	if n := children.Word; n != nil {
+	// 		queue.Push(n, parts[1:])
+	// 	}
+	// 	if n := children.Star; n != nil {
+	// 		queue.Push(n, parts[1:])
+	// 	}
+	// 	if n := children.Hash; n != nil {
+	// 		queue.Push(n, parts[1:])
+	// 	}
+	// 	// PutTraverseNode(children)
+	// }
 
-	for queue.Len() > 0 {
-		front := queue.Front()
-		nodePart := front.Value.(*NodeWithParts)
-		node := nodePart.node
-		parts := nodePart.parts
+	el := queue.Pop()
+	for ; el != nil; el = queue.Pop() {
+		el := el
+		node := el.Node
+		parts := el.Parts
 
 		if len(parts) == 0 {
 			if node.IsStop() {
 				stopNodes[node.ID] = struct{}{}
 			}
-			queue.Remove(front)
+			// queue.Remove(front)
 			continue
 		}
 
@@ -117,34 +101,34 @@ func (t *Tree) traverseQueue(node *Node, parts []uint64, stopNodes map[types.Nod
 
 		children := node.ChildrenForTraverse(part, true)
 		if n := children.Word; n != nil {
-			queue.PushBack(&NodeWithParts{
-				node:  n,
-				parts: parts[1:],
-			})
+			queue.Push(n, parts[1:])
 		}
 		if n := children.Star; n != nil {
-			queue.PushBack(&NodeWithParts{
-				node:  n,
-				parts: parts[1:],
-			})
+			queue.Push(n, parts[1:])
 		}
 		if n := children.Hash; n != nil {
-			queue.PushBack(&NodeWithParts{
-				node:  n,
-				parts: parts[1:],
-			})
-			fn(n, part, parts)
+			queue.Push(n, parts[1:])
+			// todo: why it was here?
+			// fn(n, part, parts)
 		}
 		if n := children.SelfHash; n != nil {
-			queue.PushBack(&NodeWithParts{
-				node:  n,
-				parts: parts[1:],
-			})
-			fn(n, part, parts)
+			queue.Push(n, parts[1:])
+			// fn(n, part, parts)
+			children := n.ChildrenForTraverse(part, false)
+			if n := children.Word; n != nil {
+				queue.Push(n, parts[1:])
+			}
+			if n := children.Star; n != nil {
+				queue.Push(n, parts[1:])
+			}
+			if n := children.Hash; n != nil {
+				queue.Push(n, parts[1:])
+			}
 		}
-		PutTraverseNode(children)
+		// PutTraverseNode(children)
 
-		queue.Remove(front)
+		// queue.Remove(front)
+		list.PutElementToPool(el)
 	}
 
 	// todo: where to put it?

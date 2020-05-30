@@ -2,7 +2,7 @@ package broker
 
 import (
 	"github.com/ivanovaleksey/broker/pkg/types"
-	"github.com/ivanovaleksey/broker/src/tree"
+	"github.com/ivanovaleksey/broker/src/node"
 	"go.uber.org/zap"
 )
 
@@ -52,9 +52,9 @@ func prepareParts(parts []string) []string {
 	out := parts[:0]
 	for i := 0; i < len(parts); i++ {
 		part := parts[i]
-		if part == tree.NodeHash {
+		if part == node.NodeHash {
 			nextIdx := i + 1
-			if nextIdx < len(parts) && parts[nextIdx] == tree.NodeHash {
+			if nextIdx < len(parts) && parts[nextIdx] == node.NodeHash {
 				// skip sequent #
 				continue
 			}
