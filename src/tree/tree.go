@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 )
 
-const bucketsCountConsumers = 256
+const bucketsCountConsumers = 16
 
 type Tree struct {
 	root *node.Node
@@ -48,7 +48,7 @@ func NewTree() *Tree {
 		nodeConsumers: log,
 	}
 
-	const staticConsumersSize = 10000
+	const staticConsumersSize = 200000
 	// staticConsumers := make(map[uint64]map[types.ConsumerID]struct{}, staticConsumersSize)
 	for i := 0; i < bucketsCountConsumers; i++ {
 		m := make(map[uint64][]types.ConsumerID, staticConsumersSize)
