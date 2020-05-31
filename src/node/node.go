@@ -25,6 +25,7 @@ const (
 type Node struct {
 	ID   types.NodeID
 	Type NodeType
+	Part uint64
 
 	Stop int32
 
@@ -32,12 +33,39 @@ type Node struct {
 	childHash *Node
 	childStar *Node
 	Next      map[uint64]*Node
+	Children  []*Node
 }
 
 func NewNode() *Node {
 	n := &Node{
 		ID: rand.Int63(),
 	}
+	// go func() {
+	// 	tc := time.Tick(10 * time.Second)
+	// 	for {
+	// 		select {
+	// 		case <-tc:
+	// 			n.childMu.RLock()
+	// 			nextLen := len(n.Next)
+	// 			childLen := len(n.Children)
+	// 			if nextLen > 10 || childLen > 10 {
+	// 				var (
+	// 					starChild, hashChild int64
+	// 				)
+	// 				if n.childHash != nil {
+	// 					hashChild = n.childHash.ID
+	// 				}
+	// 				if n.childStar != nil {
+	// 					hashChild = n.childStar.ID
+	// 				}
+	//
+	// 				fmt.Printf("node_id=%d,type=%d,hash_child=%d,star_child=%d,len(next)=%d,len(child)=%d\n", n.ID, n.Type, hashChild, starChild, nextLen, childLen)
+	// 			}
+	// 			n.childMu.RUnlock()
+	// 		}
+	// 	}
+	// }()
+
 	return n
 }
 
@@ -54,7 +82,16 @@ func (n *Node) ChildrenForTraverse(word uint64, withSelfHash bool) TraverseNode 
 	n.childMu.RLock()
 	out.Hash = n.childHash
 	out.Star = n.childStar
-	out.Word = n.Next[word]
+	if n.IsSpecial() {
+		out.Word = n.Next[word]
+	} else {
+		for i := 0; i < len(n.Children); i++ {
+			if n.Children[i].Part == word {
+				out.Word = n.Children[i]
+				break
+			}
+		}
+	}
 	n.childMu.RUnlock()
 	if n.IsHash() && withSelfHash {
 		out.SelfHash = n
@@ -71,7 +108,16 @@ func (n *Node) Child(part uint64) *Node {
 	case topics.HashHash:
 		return n.childHash
 	default:
-		return n.Next[part]
+		if n.IsSpecial() {
+			return n.Next[part]
+		} else {
+			for i := 0; i < len(n.Children); i++ {
+				if n.Children[i].Part == part {
+					return n.Children[i]
+				}
+			}
+			return nil
+		}
 	}
 }
 
@@ -83,10 +129,14 @@ func (n *Node) SetChild(child *Node, part uint64) {
 	case topics.HashHash:
 		n.childHash = child
 	default:
-		if n.Next == nil {
-			n.Next = make(map[uint64]*Node)
+		// if n.Next == nil {
+		if n.IsSpecial() {
+			// n.Next = make(map[uint64]*Node)
+			n.Next[part] = child
+		} else {
+			child.Part = part
+			n.Children = append(n.Children, child)
 		}
-		n.Next[part] = child
 	}
 	n.childMu.Unlock()
 }
@@ -99,7 +149,18 @@ func (n *Node) RemoveChild(part uint64) {
 	case topics.HashHash:
 		n.childHash = nil
 	default:
-		delete(n.Next, part)
+		if n.IsSpecial() {
+			delete(n.Next, part)
+		} else {
+			for i := 0; i < len(n.Children); i++ {
+				if n.Children[i].Part == part {
+					n.Children[i] = n.Children[len(n.Children)-1]
+					n.Children[len(n.Children)-1] = nil
+					n.Children = n.Children[:len(n.Children)-1]
+					break
+				}
+			}
+		}
 	}
 	n.childMu.Unlock()
 }
@@ -138,11 +199,21 @@ func (n *Node) IsHash() bool {
 }
 
 func (n *Node) Reset() {
+	n.Part = 0
 	n.childMu.Lock()
 	n.childStar = nil
 	n.childHash = nil
 	for k := range n.Next {
 		delete(n.Next, k)
 	}
+	n.Children = nil
 	n.childMu.Unlock()
+}
+
+func (n *Node) IsRoot() bool {
+	return n.ID == -1
+}
+
+func (n *Node) IsSpecial() bool {
+	return n.ID < 0
 }

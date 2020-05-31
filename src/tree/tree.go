@@ -32,14 +32,22 @@ func NewTree() *Tree {
 	root.Next = make(map[uint64]*node.Node, rootSize)
 
 	star := node.NewNode()
+	star.ID = -2
 	star.Type = node.NodeTypeStar
 	star.Next = make(map[uint64]*node.Node, starSize)
 	root.SetChild(star, topics.HashStar)
 
 	hash := node.NewNode()
+	hash.ID = -3
 	hash.Type = node.NodeTypeHash
 	hash.Next = make(map[uint64]*node.Node, hashSize)
 	root.SetChild(hash, topics.HashHash)
+
+	starStar := node.NewNode()
+	starStar.ID = -4
+	starStar.Type = node.NodeTypeStar
+	starStar.Next = make(map[uint64]*node.Node, starSize)
+	star.SetChild(starStar, topics.HashStar)
 
 	log := NewConsumersLog()
 
@@ -135,7 +143,7 @@ func (t *Tree) AddSubscription(consumerID types.ConsumerID, parts []uint64) {
 		// todo: is it ok or should be done in smarter way?
 		if childNode.IsHash() {
 			// todo: check this is not root node, maybe better check
-			if parentNode.ID > 0 {
+			if !parentNode.IsRoot() {
 				// todo: it was outside if, move in case of strange problems
 				parentNode.SetStop(true)
 				t.nodeConsumers.AddConsumer(parentNode.ID, consumerID)
@@ -268,12 +276,12 @@ func (t *Tree) RemoveSubscription(consumerID types.ConsumerID, parts []uint64) {
 			left := removeConsumerFromNode(currentNode)
 			if currentNode.IsHash() {
 				// todo: can be nil and panic?
-				if prevNode.ID > 0 {
+				if !prevNode.IsRoot() {
 					// todo: how to delete node here?
 					removeConsumerFromNode(prevNode)
 				}
 			}
-			if left == 0 && prevNode.ID > 0 {
+			if left == 0 && !prevNode.IsRoot() {
 				prevNode.RemoveChild(part)
 				PutNodeToPool(currentNode)
 			}
