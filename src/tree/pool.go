@@ -1,6 +1,7 @@
 package tree
 
 import (
+	"github.com/ivanovaleksey/broker/pkg/types"
 	"github.com/ivanovaleksey/broker/src/node"
 	"sync"
 )
@@ -38,4 +39,21 @@ func GetNodeFromPool() *node.Node {
 func PutNodeToPool(n *node.Node) {
 	n.Reset()
 	NodePool.Put(n)
+}
+
+var PoolCnt int32
+var Pool = sync.Pool{
+	New: func() interface{} {
+		// atomic.AddInt32(&PoolCnt, 1)
+		return make([]types.ConsumerID, 3)
+	},
+}
+
+func GetFromPool() []types.ConsumerID {
+	return Pool.Get().([]types.ConsumerID)
+}
+
+func PutToPool(sl []types.ConsumerID) {
+	sl = sl[:0]
+	Pool.Put(sl)
 }

@@ -8,7 +8,7 @@ import (
 	"sync/atomic"
 )
 
-const bucketsCountConsumers = 8
+const bucketsCountConsumers = 256
 
 type Tree struct {
 	root *node.Node
@@ -48,7 +48,7 @@ func NewTree() *Tree {
 		nodeConsumers: log,
 	}
 
-	const staticConsumersSize = 300000
+	const staticConsumersSize = 10000
 	// staticConsumers := make(map[uint64]map[types.ConsumerID]struct{}, staticConsumersSize)
 	for i := 0; i < bucketsCountConsumers; i++ {
 		m := make(map[uint64][]types.ConsumerID, staticConsumersSize)
@@ -100,7 +100,8 @@ func (t *Tree) AddSubscriptionStatic(consumerID types.ConsumerID, topicHash uint
 	inner, ok := t.staticConsumers[idx][topicHash]
 	if !ok {
 		// todo: can get slice from pool?
-		inner = make([]types.ConsumerID, 0, 12)
+		// inner = make([]types.ConsumerID, 0, 12)
+		inner = GetFromPool()
 	} else {
 		for i := 0; i < len(inner); i++ {
 			if inner[i] == consumerID {
@@ -223,6 +224,7 @@ func (t *Tree) RemoveSubscriptionStatic(consumerID types.ConsumerID, topicHash u
 		return
 	}
 	if len(inner) == 0 {
+		PutToPool(inner)
 		delete(t.staticConsumers[idx], topicHash)
 	}
 }
