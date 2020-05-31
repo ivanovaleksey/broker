@@ -59,8 +59,11 @@ func (l *ConsumersLog) RemoveConsumer(nodeID types.NodeID, consumerID types.Cons
 		// consumer has no more subscriptions on this node
 		delete(hash, consumerID)
 	}
-	l.nodeConsumers[bucketIndex][nodeID] = hash
-	return len(hash)
+	hashLen := len(hash)
+	if hashLen == 0 {
+		delete(l.nodeConsumers[bucketIndex], nodeID)
+	}
+	return hashLen
 }
 
 func (l *ConsumersLog) GetConsumers(nodeID types.NodeID) Consumers {
