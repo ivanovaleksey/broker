@@ -1,11 +1,13 @@
 package node
 
 import (
+	"fmt"
 	"github.com/ivanovaleksey/broker/pkg/types"
 	"github.com/ivanovaleksey/broker/src/topics"
 	"math/rand"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 const (
@@ -40,31 +42,31 @@ func NewNode() *Node {
 	n := &Node{
 		ID: rand.Int63(),
 	}
-	// go func() {
-	// 	tc := time.Tick(10 * time.Second)
-	// 	for {
-	// 		select {
-	// 		case <-tc:
-	// 			n.childMu.RLock()
-	// 			nextLen := len(n.Next)
-	// 			childLen := len(n.Children)
-	// 			if nextLen > 10 || childLen > 10 {
-	// 				var (
-	// 					starChild, hashChild int64
-	// 				)
-	// 				if n.childHash != nil {
-	// 					hashChild = n.childHash.ID
-	// 				}
-	// 				if n.childStar != nil {
-	// 					hashChild = n.childStar.ID
-	// 				}
-	//
-	// 				fmt.Printf("node_id=%d,type=%d,hash_child=%d,star_child=%d,len(next)=%d,len(child)=%d\n", n.ID, n.Type, hashChild, starChild, nextLen, childLen)
-	// 			}
-	// 			n.childMu.RUnlock()
-	// 		}
-	// 	}
-	// }()
+	go func() {
+		tc := time.Tick(10 * time.Second)
+		for {
+			select {
+			case <-tc:
+				n.childMu.RLock()
+				nextLen := len(n.Next)
+				childLen := len(n.Children)
+				if nextLen > 10 || childLen > 10 {
+					var (
+						starChild, hashChild int64
+					)
+					if n.childHash != nil {
+						hashChild = n.childHash.ID
+					}
+					if n.childStar != nil {
+						hashChild = n.childStar.ID
+					}
+
+					fmt.Printf("node_id=%d,type=%d,hash_child=%d,star_child=%d,len(next)=%d,len(child)=%d\n", n.ID, n.Type, hashChild, starChild, nextLen, childLen)
+				}
+				n.childMu.RUnlock()
+			}
+		}
+	}()
 
 	return n
 }
