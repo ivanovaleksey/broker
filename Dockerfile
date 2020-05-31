@@ -11,7 +11,7 @@ RUN cd /src && go build -o ./bin/mbs ./cmd/broker
 FROM alpine
 RUN apk update && apk add ca-certificates && rm -rf /var/cache/apk/*
 COPY --from=build /src/bin/mbs /usr/bin/mbs
-ENV GOGC=200
+ENV GOGC=220
 ENV GODEBUG="gctrace=1"
 EXPOSE 80
 CMD ["mbs", "-listen-addr=:80"]
