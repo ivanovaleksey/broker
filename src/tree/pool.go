@@ -29,3 +29,13 @@ var NodePool = sync.Pool{
 		return node.NewNode()
 	},
 }
+
+func GetNodeFromPool() *node.Node {
+	n := NodePool.Get().(*node.Node)
+	return n
+}
+
+func PutNodeToPool(n *node.Node) {
+	n.Reset()
+	NodePool.Put(n)
+}

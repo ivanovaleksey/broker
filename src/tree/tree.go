@@ -149,7 +149,7 @@ func (t *Tree) AddSubscription(consumerID types.ConsumerID, parts []uint64) {
 		childNode := currentNode.Child(part)
 		if childNode == nil {
 			// newNode := NewNode()
-			newNode := NodePool.Get().(*node.Node)
+			newNode := GetNodeFromPool()
 			newNode.SetType(part)
 
 			if lastPart {
@@ -273,8 +273,7 @@ func (t *Tree) RemoveSubscription(consumerID types.ConsumerID, parts []uint64) {
 			}
 			if left == 0 && prevNode.ID > 0 {
 				prevNode.RemoveChild(part)
-				currentNode.Reset()
-				NodePool.Put(currentNode)
+				PutNodeToPool(currentNode)
 			}
 		}
 	}

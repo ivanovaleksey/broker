@@ -141,5 +141,8 @@ func (n *Node) Reset() {
 	n.childMu.Lock()
 	n.childStar = nil
 	n.childHash = nil
+	for k := range n.Next {
+		delete(n.Next, k)
+	}
 	n.childMu.Unlock()
 }
