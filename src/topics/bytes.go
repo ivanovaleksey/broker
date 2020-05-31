@@ -3,6 +3,7 @@ package topics
 import (
 	"bytes"
 	"github.com/ivanovaleksey/broker/pkg/hash"
+	"hash/maphash"
 	"reflect"
 	"unsafe"
 )
@@ -23,7 +24,8 @@ var (
 )
 
 func init() {
-	h := hash.GetHash()
+	h := maphash.Hash{}
+	h.SetSeed(hash.Seed)
 
 	h.WriteByte(byteStar)
 	HashStar = h.Sum64()
@@ -33,7 +35,7 @@ func init() {
 	HashHash = h.Sum64()
 	h.Reset()
 
-	hash.PutHash(h)
+	// hash.PutHash(h)
 }
 
 type BytesParser struct {
@@ -73,15 +75,18 @@ func (t *BytesParser) Parse(str string) Info {
 }
 
 func (t *BytesParser) Hash(str string) uint64 {
-	h := hash.GetHash()
+	// h := hash.GetHash()
+	h := maphash.Hash{}
+	h.SetSeed(hash.Seed)
 	h.WriteString(str)
 	sum := h.Sum64()
-	hash.PutHash(h)
+	// hash.PutHash(h)
 	return sum
 }
 
 func (t *BytesParser) Parts(str string) []uint64 {
-	h := hash.GetHash()
+	h := maphash.Hash{}
+	h.SetSeed(hash.Seed)
 	hdr := *(*reflect.StringHeader)(unsafe.Pointer(&str))
 	bytesStr := *(*[]byte)(unsafe.Pointer(&reflect.SliceHeader{
 		Data: hdr.Data,
@@ -103,6 +108,6 @@ func (t *BytesParser) Parts(str string) []uint64 {
 		out = append(out, h.Sum64())
 		h.Reset()
 	}
-	hash.PutHash(h)
+	// hash.PutHash(h)
 	return out
 }

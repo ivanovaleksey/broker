@@ -5,10 +5,10 @@ import (
 	"sync"
 )
 
-var seed maphash.Seed
+var Seed maphash.Seed
 
 func init() {
-	seed = maphash.MakeSeed()
+	Seed = maphash.MakeSeed()
 }
 
 var PoolCount int32
@@ -21,7 +21,7 @@ var Pool = sync.Pool{
 
 func GetHash() *maphash.Hash {
 	h := Pool.Get().(*maphash.Hash)
-	h.SetSeed(seed)
+	h.SetSeed(Seed)
 	return h
 }
 
